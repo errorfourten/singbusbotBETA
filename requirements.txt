@@ -1,0 +1,17 @@
+certifi==2018.1.18
+chardet==3.0.4
+DateTime==4.2
+future==0.16.0
+get==0.0.39
+idna==2.6
+logging==0.4.9.6
+post==0.0.26
+public==0.0.65
+python-telegram-bot==9.0.0
+pytz==2017.3
+query-string==0.0.28
+request==0.0.26
+requests==2.18.4
+telegram==0.0.1
+urllib3==1.22
+zope.interface==4.4.3
