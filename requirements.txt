@@ -4,7 +4,6 @@ DateTime==4.2
 future==0.16.0
 get==0.0.39
 idna==2.6
-logging==0.4.9.6
 post==0.0.26
 public==0.0.65
 python-telegram-bot==9.0.0
