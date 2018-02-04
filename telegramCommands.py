@@ -1,4 +1,5 @@
 from singbusbot import send_message_to_owner
+import logging
 
 def check_commands(bot, update, message):
     message = message.split(" ")
@@ -9,7 +10,13 @@ def check_commands(bot, update, message):
     elif message[0] == "/start":
         return "Welcome to Singapore Bus Bot! Just enter a bus stop code and find the next bus. For example, try entering 53009 or Bishan Int.\nDon't know what your bus stop code is? Take a look at the top right of the information boards or check https://www.transitlink.com.sg/eservice/eguide/service_idx.php with your bus number to look up the bus stop code. \n\n /help for more information"
     elif message[0] == "/feedback":
-        send_message_to_owner(bot, " ".join(message[1:]))
-        return "Thank you for your feedback! \"{}\"".format(" ".join(message[1:]))
+        if message == False:
+            return "Please enter feedback"
+        else:
+            if message[1:] == []:
+                return "Please enter some feedback"
+            else:
+                send_message_to_owner(bot, " ".join(message[1:]))
+                return "Thank you for your feedback! \"{}\"".format(" ".join(message[1:]))
     else:
         return False

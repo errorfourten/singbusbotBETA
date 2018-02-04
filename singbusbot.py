@@ -13,7 +13,12 @@ URL = "https://api.telegram.org/bot{}/".format(TOKEN)
 updater = Updater(token=TOKEN)
 job = updater.job_queue
 dispatcher = updater.dispatcher
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+
+class TimedOutFilter(logging.Filter):
+    def filter(self, record):
+        if "Error while getting Updates: Timed out" in record.getMessage():
+            print("DENIED")
+            return False
 
 #Handles /start commands
 def commands(bot, update):
@@ -27,10 +32,13 @@ def unknown(bot, update):
     logging.info("Invalid command: %s [%s] (%s)", update.message.from_user.first_name, update.message.from_user.username, update.message.chat_id)
 
 def error_callback(bot, update, error):
-    try:
-        raise error
-    except TimedOut:
+    if TimedOut:
         return
+    else:
+        print(error)
+        print("Timed" in error)
+        logging.warning('Update "%s" caused error "%s"', update, error)
+
 
 def send_message_to_owner(bot, update):
     bot.send_message(chat_id=owner_id, text=update)
@@ -156,6 +164,10 @@ def update_bus_data(bot, update):
     logging.info("Updated Bus Data")
 
 def main():
+    telegram_logger = logging.getLogger('telegram.ext.updater')
+    logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+    telegram_logger.addFilter(TimedOutFilter())
+
     command_handler = MessageHandler(Filters.command, commands)
     refresh_handler = CallbackQueryHandler(refresh_timings)
     bus_handler = MessageHandler(Filters.text, send_bus_timings)
