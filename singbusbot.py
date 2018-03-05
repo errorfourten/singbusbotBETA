@@ -84,7 +84,9 @@ def check_valid_bus_stop(message):
 def get_time(pjson, x, NextBus):
     return datetime.datetime.strptime(pjson["Services"][x][NextBus]["EstimatedArrival"].split("+")[0], "%Y-%m-%dT%H:%M:%S")
 
-def check_valid_favourite(user, message):
+def check_valid_favourite(update):
+    user = update.message.chat.id
+    message = update.message.text
     cur.execute("SELECT * FROM user_data WHERE '{}' = user_id".format(update.message.from_user.id))
     row = cur.fetchall()
     sf = row[2]
@@ -104,7 +106,7 @@ def send_bus_timings(bot, update, isCallback=False):
         message = CallbackQuery.message.text.split()[0]
     else:
         #Check if it exists in user's favourites
-        message = check_valid_favourite(update.message.chat.id, update.message.text)
+        message = check_valid_favourite(update)
 
     #Call function and assign to variables
     busStopCode, busStopName = check_valid_bus_stop(message)
