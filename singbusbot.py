@@ -1,13 +1,26 @@
-import telegram, json, requests, time, urllib, datetime, updateBusData, pickle, os, sys, telegramCommands, logging
-from telegram import InlineQueryResultArticle, InputTextMessageContent, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, InlineQueryHandler, CallbackQueryHandler
-from telegram.error import TelegramError, Unauthorized, BadRequest, TimedOut, ChatMigrated, NetworkError
+import telegram, json, requests, time, urllib, datetime, updateBusData, pickle, os, sys, telegramCommands, logging, psycopg2
+from telegram import *
+from telegram.ext import *
+from telegram.error import *
+from urllib import parse
 
 #Initialise private variables. Configured through environmental variables
 TOKEN = os.getenv("TOKEN")
 LTA_Account_Key = os.getenv("LTA_Account_Key")
 owner_id = os.getenv("owner_id")
 URL = "https://api.telegram.org/bot{}/".format(TOKEN)
+
+parse.uses_netloc.append("postgres")
+url = parse.urlparse(os.environ["DATABASE_URL"])
+
+conn = psycopg2.connect(
+    database=url.path[1:],
+    user=url.username,
+    password=url.password,
+    host=url.hostname,
+    port=url.port
+)
+cur = conn.cursor()
 
 #Start telegram wrapper & initate logging module
 updater = Updater(token=TOKEN)
@@ -17,33 +30,35 @@ dispatcher = updater.dispatcher
 class TimedOutFilter(logging.Filter):
     def filter(self, record):
         if "Error while getting Updates: Timed out" in record.getMessage():
-            print("DENIED")
             return False
 
 #Handles /start commands
 def commands(bot, update):
     text = telegramCommands.check_commands(bot, update, update.message.text)
-    logging.info("Command: %s [%s] (%s), %s", update.message.from_user.first_name, update.message.from_user.username, update.message.chat_id, update.message.text)
-    bot.send_message(chat_id=update.message.chat_id, text=text, parse_mode="HTML")
+    if text == False:
+        logging.info("Invalid Command: %s [%s] (%s), %s", update.message.from_user.first_name, update.message.from_user.username, update.message.from_user.id, update.message.text)
+        bot.send_message(chat_id=update.message.chat_id, text="Please enter a valid command", parse_mode="HTML")
+    else:
+        logging.info("Command: %s [%s] (%s), %s", update.message.from_user.first_name, update.message.from_user.username, update.message.from_user.id, update.message.text)
+        bot.send_message(chat_id=update.message.chat_id, text=text, parse_mode="HTML")
 
 #Handles invalid commands & logs request
 def unknown(bot, update):
     bot.send_message(chat_id=update.message.chat_id, text="Please enter a valid command")
-    logging.info("Invalid command: %s [%s] (%s)", update.message.from_user.first_name, update.message.from_user.username, update.message.chat_id)
+    logging.info("Invalid command: %s [%s] (%s)", update.message.from_user.first_name, update.message.from_user.username, update.message.from_user.id)
 
 def error_callback(bot, update, error):
     if TimedOut:
         return
     else:
-        print(error)
-        print("Timed" in error)
         logging.warning('Update "%s" caused error "%s"', update, error)
-
 
 def send_message_to_owner(bot, update):
     bot.send_message(chat_id=owner_id, text=update)
 
 def check_valid_bus_stop(message):
+    if message == False:
+        return (False, False)
     #Converts message to a processable form
     message = "".join([x for x in message if x.isalnum()]).lower()
     #Loads bus stop database from busStop.txt
@@ -67,6 +82,16 @@ def check_valid_bus_stop(message):
 def get_time(pjson, x, NextBus):
     return datetime.datetime.strptime(pjson["Services"][x][NextBus]["EstimatedArrival"].split("+")[0], "%Y-%m-%dT%H:%M:%S")
 
+def check_valid_favourite(user, message):
+    cur.execute("SELECT * FROM user_data WHERE '{}' = user_id").format(update.message.from_user.id)
+    row = cur.fetchall()
+    sf = row[2]
+    for x in sf:
+    	isit = message in x[0]
+    	if isit == True:
+    		return x[1]
+    return message
+
 def send_bus_timings(bot, update, isCallback=False):
     #Replies user based on updates received
     text = ""
@@ -76,7 +101,8 @@ def send_bus_timings(bot, update, isCallback=False):
         CallbackQuery = update.callback_query
         message = CallbackQuery.message.text.split()[0]
     else:
-        message = update.message.text
+        #Check if it exists in user's favourites
+        message = check_valid_favourite(update.message.chat.id, update.message.text)
 
     #Call function and assign to variables
     busStopCode, busStopName = check_valid_bus_stop(message)
@@ -84,7 +110,7 @@ def send_bus_timings(bot, update, isCallback=False):
     if busStopCode == False:
         #Informs the user that busStopCode was invalid & logs it
         bot.send_message(chat_id=update.message.chat_id, text="Please enter a valid bus stop code", parse_mode="Markdown")
-        logging.info("Invalid request: %s [%s] (%s), %s", update.message.from_user.first_name, update.message.from_user.username, update.message.chat_id, message)
+        logging.info("Invalid request: %s [%s] (%s), %s", update.message.from_user.first_name, update.message.from_user.username, update.message.from_user.id, message)
         return
 
     else:
@@ -147,13 +173,13 @@ def send_bus_timings(bot, update, isCallback=False):
     if isCallback == True:
         #Reply to the user and log it
         text += "\n_Last Refreshed: " + (datetime.datetime.utcnow()+datetime.timedelta(hours=8)).strftime('%H:%M:%S') + "_"
-        logging.info("Refresh: %s [%s] (%s), %s", CallbackQuery.from_user.first_name, CallbackQuery.from_user.username, CallbackQuery.message.chat_id, message)
+        logging.info("Refresh: %s [%s] (%s), %s", CallbackQuery.from_user.first_name, CallbackQuery.from_user.username, CallbackQuery.from_user.chat_id, message)
         bot.editMessageText(chat_id=CallbackQuery.message.chat_id, message_id=CallbackQuery.message.message_id, text=text, parse_mode="Markdown", reply_markup=reply_markup)
         bot.answerCallbackQuery(callback_query_id=CallbackQuery.id)
 
     #Else, send a new message
     else:
-        logging.info("Request: %s [%s] (%s), %s", update.message.from_user.first_name, update.message.from_user.username, update.message.chat_id, message)
+        logging.info("Request: %s [%s] (%s), %s", update.message.from_user.first_name, update.message.from_user.username, update.message.from_user.id, message)
         bot.send_message(chat_id=update.message.chat_id, text=text, parse_mode="Markdown", reply_markup=reply_markup)
 
 def refresh_timings(bot, update):
@@ -162,6 +188,62 @@ def refresh_timings(bot, update):
 def update_bus_data(bot, update):
     updateBusData.main()
     logging.info("Updated Bus Data")
+
+ADD, NAME, POSITION, CONFIRM = range(4)
+
+def settings(bot, update):
+    print("User trying to access settings")
+    reply_keyboard = [["Add Favourite", "Remove Favourite"]]
+    update.message.reply_text(
+        "What would you like to do?"
+        "Send /cancel to stop this at any time", reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True)
+        )
+
+    return ADD
+
+def add_favourite(bot, update):
+    update.message.reply_text("Please enter a bus stop code")
+    return NAME
+
+def choose_name(bot, update, user_data):
+    message = update.message.text
+    busStopCode, busStopName = check_valid_bus_stop(message)
+
+    if busStopCode == False:
+        #Informs the user that busStopCode was invalid & logs it
+        update.message.reply_text("Try again. Please enter a valid bus stop code")
+        return ADD
+
+    else:
+        user_data["busStopCode"] = busStopCode
+        update.message.reply_text("What would you like to name: {} - {}?".format(busStopCode, busStopName))
+        return POSITION
+
+def choose_position(bot, update, user_data):
+    user_data["name"] = update.message.text
+    cur.execute("SELECT * FROM user_data WHERE '{}' = user_id").format(update.message.from_user.id)
+    row = cur.fetchall()
+    sf = row[2]
+    user_data["sf"] = sf
+    reply_keyboard = [[sf[0][0], sf[1][0]],[sf[2][0], sf[3][0]],[sf[4][0], sf[5][0]]]
+    update.message.reply_text("Choose a position for this bus stop", reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
+    return CONFIRM
+
+def confirm_favourite(bot, update, user_data):
+    sf = user_data["sf"]
+    sf[int(update.message.text)-1] = [user_data["name"], user_data["busStopCode"]]
+    cur.execute("INSERT INTO user_data (user_id, username, favourite, state) VALUES ('{}', '{}', '{}', 1)").format(update.message.from_user.id, update.message.from_user.username, sf)
+    conn.commit()
+    reply_keyboard = [[sf[0][0], sf[1][0]],[sf[2][0], sf[3][0]],[sf[4][0], sf[5][0]]]
+    update.message.reply_text("Confirm position of {} is at {}".format(user_data["busStopCode"], update.message.text), reply_markup=ReplyKeyboardMarkup(reply_keyboard))
+    user_data.clear()
+    return ConversationHandler.END
+
+def cancel(bot, update):
+    reply_markup = telegram.ReplyKeyboardRemove()
+    update.message.reply_text("Ended", reply_markup=reply_markup)
+    user_data.clear()
+    return ConversationHandler.END
 
 def main():
     telegram_logger = logging.getLogger('telegram.ext.updater')
@@ -172,8 +254,21 @@ def main():
     refresh_handler = CallbackQueryHandler(refresh_timings)
     bus_handler = MessageHandler(Filters.text, send_bus_timings)
     unknown_handler = MessageHandler(Filters.all, unknown)
+    settings_handler = ConversationHandler(
+        entry_points=[CommandHandler('settings', settings)],
+
+        states={
+            ADD: [RegexHandler("^Add Favourite$", add_favourite)],
+            NAME: [MessageHandler(Filters.text, choose_name, pass_user_data=True)],
+            POSITION: [MessageHandler(Filters.text, choose_position, pass_user_data=True)],
+            CONFIRM: [RegexHandler("\d", confirm_favourite, pass_user_data=True)]
+        },
+
+        fallbacks=[CommandHandler("cancel",cancel, pass_user_data=True)]
+    )
 
     job.run_daily(update_bus_data, datetime.time(3))
+    dispatcher.add_handler(settings_handler)
     dispatcher.add_handler(command_handler)
     dispatcher.add_handler(refresh_handler)
     dispatcher.add_handler(bus_handler)
