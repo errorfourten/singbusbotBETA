@@ -21,6 +21,7 @@ conn = psycopg2.connect(
     port=url.port
 )
 cur = conn.cursor()
+cur.execute("CREATE TABLE IF NOT EXISTS user_data(user_id TEXT, username TEXT, favourite TEXT, state int, PRIMARY KEY (user_id));")
 
 #Start telegram wrapper & initate logging module
 updater = Updater(token=TOKEN)
