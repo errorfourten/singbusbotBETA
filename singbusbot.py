@@ -85,7 +85,7 @@ def get_time(pjson, x, NextBus):
     return datetime.datetime.strptime(pjson["Services"][x][NextBus]["EstimatedArrival"].split("+")[0], "%Y-%m-%dT%H:%M:%S")
 
 def check_valid_favourite(user, message):
-    cur.execute("SELECT * FROM user_data WHERE '{}' = user_id").format(update.message.from_user.id)
+    cur.execute("SELECT * FROM user_data WHERE '{}' = user_id".format(update.message.from_user.id))
     row = cur.fetchall()
     sf = row[2]
     for x in sf:
@@ -223,7 +223,7 @@ def choose_name(bot, update, user_data):
 
 def choose_position(bot, update, user_data):
     user_data["name"] = update.message.text
-    cur.execute("SELECT * FROM user_data WHERE '{}' = user_id").format(update.message.from_user.id)
+    cur.execute("SELECT * FROM user_data WHERE '{}' = user_id".format(update.message.from_user.id))
     row = cur.fetchall()
     sf = row[2]
     user_data["sf"] = sf
@@ -234,7 +234,7 @@ def choose_position(bot, update, user_data):
 def confirm_favourite(bot, update, user_data):
     sf = user_data["sf"]
     sf[int(update.message.text)-1] = [user_data["name"], user_data["busStopCode"]]
-    cur.execute("INSERT INTO user_data (user_id, username, favourite, state) VALUES ('{}', '{}', '{}', 1)").format(update.message.from_user.id, update.message.from_user.username, sf)
+    cur.execute("INSERT INTO user_data (user_id, username, favourite, state) VALUES ('{}', '{}', '{}', 1)".format(update.message.from_user.id, update.message.from_user.username, sf))
     conn.commit()
     reply_keyboard = [[sf[0][0], sf[1][0]],[sf[2][0], sf[3][0]],[sf[4][0], sf[5][0]]]
     update.message.reply_text("Confirm position of {} is at {}".format(user_data["busStopCode"], update.message.text), reply_markup=ReplyKeyboardMarkup(reply_keyboard))
