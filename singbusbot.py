@@ -37,6 +37,9 @@ class TimedOutFilter(logging.Filter):
 #Handles /start commands
 def commands(bot, update):
     text = telegramCommands.check_commands(bot, update, update.message.text)
+    if update.message.text == '/start':
+        cur.execute("INSERT INTO user_data (user_id, username, favourite, state) VALUES ('{}', '{}', '{}', 1) ON CONFLICT (user_id) DO NOTHING".format(update.message.from_user.id, update.message.from_user.username, [["1", "0"],["2", "0"],["3", "0"],["4", "0"]]))
+        conn.commit()
     if text == False:
         logging.info("Invalid Command: %s [%s] (%s), %s", update.message.from_user.first_name, update.message.from_user.username, update.message.from_user.id, update.message.text)
         bot.send_message(chat_id=update.message.chat_id, text="Please enter a valid command", parse_mode="HTML")
@@ -229,13 +232,24 @@ def choose_name(bot, update, user_data):
 def choose_position(bot, update, user_data):
     user_data["name"] = update.message.text
     cur.execute("SELECT * FROM user_data WHERE '{}' = user_id;".format(update.message.from_user.id))
+    cur.commit()
     row = cur.fetchall()
     if row == []:
         sf = []
     else:
         sf = row[2]
+
     user_data["sf"] = sf
-    reply_keyboard = [[sf[0][0], sf[1][0]],[sf[2][0], sf[3][0]],[sf[4][0], sf[5][0]]]
+    i=1
+    temp=[]
+    reply_keyboard=[]
+    for x in sf:
+    	temp.append(x[0])
+    	if i%2==0:
+    		reply_keyboard.append(temp)
+    		temp=[]
+    	i+=1
+
     update.message.reply_text("Choose a position for this bus stop", reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
     return CONFIRM
 
@@ -244,7 +258,17 @@ def confirm_favourite(bot, update, user_data):
     sf[int(update.message.text)-1] = [user_data["name"], user_data["busStopCode"]]
     cur.execute("INSERT INTO user_data (user_id, username, favourite, state) VALUES ('{}', '{}', '{}', 1) ON CONFLICT (user_id) DO UPDATE SET favourite = '{}'".format(update.message.from_user.id, update.message.from_user.username, sf, sf))
     conn.commit()
-    reply_keyboard = [[sf[0][0], sf[1][0]],[sf[2][0], sf[3][0]],[sf[4][0], sf[5][0]]]
+
+    i=1
+    temp=[]
+    reply_keyboard=[]
+    for x in sf:
+        temp.append(x[0])
+        if i%2==0:
+        	reply_keyboard.append(temp)
+        	temp=[]
+         i+=1
+
     update.message.reply_text("Confirm position of {} is at {}".format(user_data["busStopCode"], update.message.text), reply_markup=ReplyKeyboardMarkup(reply_keyboard))
     user_data.clear()
     return ConversationHandler.END
