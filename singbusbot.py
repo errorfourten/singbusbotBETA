@@ -89,7 +89,11 @@ def check_valid_favourite(update):
     message = update.message.text
     cur.execute("SELECT * FROM user_data WHERE '{}' = user_id".format(update.message.from_user.id))
     row = cur.fetchall()
-    sf = row[2]
+    print(row)
+    if row == None:
+        sf = []
+    else:
+        sf = row[2]
     for x in sf:
     	isit = message in x[0]
     	if isit == True:
