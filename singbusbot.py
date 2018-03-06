@@ -232,7 +232,7 @@ def choose_name(bot, update, user_data):
 def choose_position(bot, update, user_data):
     user_data["name"] = update.message.text
     cur.execute("SELECT * FROM user_data WHERE '{}' = user_id;".format(update.message.from_user.id))
-    cur.commit()
+    conn.commit()
     row = cur.fetchall()
     if row == []:
         sf = []
