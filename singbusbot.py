@@ -95,7 +95,7 @@ def check_valid_favourite(update):
     if row == []:
         sf = []
     else:
-        sf = row[0][2]
+        sf = json.loads(row[0][2])
     for x in sf:
     	isit = message in x[0]
     	if isit == True:
@@ -238,7 +238,7 @@ def choose_position(bot, update, user_data):
     if row == []:
         sf = []
     else:
-        sf = row[0][2]
+        sf = json.loads(row[0][2])
 
     user_data["sf"] = sf
     i=1
