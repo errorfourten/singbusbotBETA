@@ -38,7 +38,7 @@ class TimedOutFilter(logging.Filter):
 def commands(bot, update):
     text = telegramCommands.check_commands(bot, update, update.message.text)
     if update.message.text == '/start':
-        cur.execute("INSERT INTO user_data (user_id, username, favourite, state) VALUES ('{}', '{}', '{}', 1) ON CONFLICT (user_id) DO NOTHING".format(update.message.from_user.id, update.message.from_user.username, [["1", "0"],["2", "0"],["3", "0"],["4", "0"]]))
+        cur.execute("INSERT INTO user_data (user_id, username, favourite, state) VALUES ('{}', '{}', '{}', 1) ON CONFLICT (user_id) DO NOTHING".format(update.message.from_user.id, update.message.from_user.username, '[["1", "0"],["2", "0"],["3", "0"],["4", "0"]]'))
         conn.commit()
     if text == False:
         logging.info("Invalid Command: %s [%s] (%s), %s", update.message.from_user.first_name, update.message.from_user.username, update.message.from_user.id, update.message.text)
@@ -183,7 +183,7 @@ def send_bus_timings(bot, update, isCallback=False):
     if isCallback == True:
         #Reply to the user and log it
         text += "\n_Last Refreshed: " + (datetime.datetime.utcnow()+datetime.timedelta(hours=8)).strftime('%H:%M:%S') + "_"
-        logging.info("Refresh: %s [%s] (%s), %s", CallbackQuery.from_user.first_name, CallbackQuery.from_user.username, CallbackQuery.from_user.chat_id, message)
+        logging.info("Refresh: %s [%s] (%s), %s", CallbackQuery.from_user.first_name, CallbackQuery.from_user.username, CallbackQuery.from_user.id, message)
         bot.editMessageText(chat_id=CallbackQuery.message.chat_id, message_id=CallbackQuery.message.message_id, text=text, parse_mode="Markdown", reply_markup=reply_markup)
         bot.answerCallbackQuery(callback_query_id=CallbackQuery.id)
 
@@ -273,7 +273,7 @@ def confirm_favourite(bot, update, user_data):
     user_data.clear()
     return ConversationHandler.END
 
-def cancel(bot, update):
+def cancel(bot, update, user_data):
     reply_markup = telegram.ReplyKeyboardRemove()
     update.message.reply_text("Ended", reply_markup=reply_markup)
     user_data.clear()
