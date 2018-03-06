@@ -230,7 +230,10 @@ def choose_position(bot, update, user_data):
     user_data["name"] = update.message.text
     cur.execute("SELECT * FROM user_data WHERE '{}' = user_id;".format(update.message.from_user.id))
     row = cur.fetchall()
-    sf = row[2]
+    if row == []:
+        sf = []
+    else:
+        sf = row[2]
     user_data["sf"] = sf
     reply_keyboard = [[sf[0][0], sf[1][0]],[sf[2][0], sf[3][0]],[sf[4][0], sf[5][0]]]
     update.message.reply_text("Choose a position for this bus stop", reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
