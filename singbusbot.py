@@ -89,9 +89,8 @@ def check_valid_favourite(update):
     message = update.message.text
     cur.execute("SELECT * FROM user_data WHERE '{}' = user_id".format(update.message.from_user.id))
     row = cur.fetchall()
-    print(row)
-    if row == None:
-        sf = []
+    if row == []:
+        sf = ]
     else:
         sf = row[2]
     for x in sf:
@@ -229,7 +228,7 @@ def choose_name(bot, update, user_data):
 
 def choose_position(bot, update, user_data):
     user_data["name"] = update.message.text
-    cur.execute("SELECT * FROM user_data WHERE '{}' = user_id".format(update.message.from_user.id))
+    cur.execute("SELECT * FROM user_data WHERE '{}' = user_id;".format(update.message.from_user.id))
     row = cur.fetchall()
     sf = row[2]
     user_data["sf"] = sf
@@ -240,7 +239,7 @@ def choose_position(bot, update, user_data):
 def confirm_favourite(bot, update, user_data):
     sf = user_data["sf"]
     sf[int(update.message.text)-1] = [user_data["name"], user_data["busStopCode"]]
-    cur.execute("INSERT INTO user_data (user_id, username, favourite, state) VALUES ('{}', '{}', '{}', 1)".format(update.message.from_user.id, update.message.from_user.username, sf))
+    cur.execute("INSERT INTO user_data (user_id, username, favourite, state) VALUES ('{}', '{}', '{}', 1) ON CONFLICT (user_id) DO UPDATE SET favourite = '{}'".format(update.message.from_user.id, update.message.from_user.username, sf, sf))
     conn.commit()
     reply_keyboard = [[sf[0][0], sf[1][0]],[sf[2][0], sf[3][0]],[sf[4][0], sf[5][0]]]
     update.message.reply_text("Confirm position of {} is at {}".format(user_data["busStopCode"], update.message.text), reply_markup=ReplyKeyboardMarkup(reply_keyboard))
