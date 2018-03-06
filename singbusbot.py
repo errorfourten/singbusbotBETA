@@ -38,7 +38,7 @@ class TimedOutFilter(logging.Filter):
 def commands(bot, update):
     text = telegramCommands.check_commands(bot, update, update.message.text)
     if update.message.text == '/start':
-        cur.execute("INSERT INTO user_data (user_id, username, favourite, state) VALUES ('{}', '{}', '{}', 1) ON CONFLICT (user_id) DO NOTHING".format(update.message.from_user.id, update.message.from_user.username, '[["1", "0"],["2", "0"],["3", "0"],["4", "0"]]'))
+        cur.execute('''INSERT INTO user_data (user_id, username, favourite, state) VALUES ("{}", "{}", "{}", 1) ON CONFLICT (user_id) DO NOTHING'''.format(update.message.from_user.id, update.message.from_user.username, '[["1", "0"],["2", "0"],["3", "0"],["4", "0"]]'))
         conn.commit()
     if text == False:
         logging.info("Invalid Command: %s [%s] (%s), %s", update.message.from_user.first_name, update.message.from_user.username, update.message.from_user.id, update.message.text)
@@ -90,7 +90,7 @@ def get_time(pjson, x, NextBus):
 def check_valid_favourite(update):
     user = update.message.chat.id
     message = update.message.text
-    cur.execute("SELECT * FROM user_data WHERE '{}' = user_id".format(update.message.from_user.id))
+    cur.execute('''SELECT * FROM user_data WHERE "{}" = user_id'''.format(update.message.from_user.id))
     row = cur.fetchall()
     if row == []:
         sf = []
@@ -231,7 +231,7 @@ def choose_name(bot, update, user_data):
 
 def choose_position(bot, update, user_data):
     user_data["name"] = update.message.text
-    cur.execute("SELECT * FROM user_data WHERE '{}' = user_id;".format(update.message.from_user.id))
+    cur.execute('''SELECT * FROM user_data WHERE "{}" = user_id'''.format(update.message.from_user.id))
     conn.commit()
     row = cur.fetchall()
     print(row)
@@ -259,7 +259,7 @@ def confirm_favourite(bot, update, user_data):
     sf[int(update.message.text)-1] = [user_data["name"], user_data["busStopCode"]]
     sf='"'+str(sf)+'"'
     print(sf)
-    cur.execute("INSERT INTO user_data (user_id, username, favourite, state) VALUES ('{}', '{}', '{}', 1) ON CONFLICT (user_id) DO UPDATE SET favourite = '{}'".format(update.message.from_user.id, update.message.from_user.username, sf, sf))
+    cur.execute('''INSERT INTO user_data (user_id, username, favourite, state) VALUES ("{}", "{}", "{}", 1) ON CONFLICT (user_id) DO UPDATE SET favourite = "{}"'''.format(update.message.from_user.id, update.message.from_user.username, sf, sf))
     conn.commit()
 
     i=1
