@@ -234,6 +234,7 @@ def choose_position(bot, update, user_data):
     cur.execute("SELECT * FROM user_data WHERE '{}' = user_id;".format(update.message.from_user.id))
     conn.commit()
     row = cur.fetchall()
+    print(row)
     if row == []:
         sf = []
     else:
