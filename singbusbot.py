@@ -267,7 +267,7 @@ def confirm_favourite(bot, update, user_data):
         if i%2==0:
         	reply_keyboard.append(temp)
         	temp=[]
-         i+=1
+        i+=1
 
     update.message.reply_text("Confirm position of {} is at {}".format(user_data["busStopCode"], update.message.text), reply_markup=ReplyKeyboardMarkup(reply_keyboard))
     user_data.clear()
