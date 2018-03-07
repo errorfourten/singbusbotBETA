@@ -306,6 +306,10 @@ def to_remove(bot, update, user_data):
 def confirm_remove(bot, update, user_data):
     user_data["sf"].remove(user_data["remove"])
     sf = user_data["sf"]
+    insert_sf = json.dumps(sf)
+    cur.execute('''UPDATE user_data SET favourite = '{}' WHERE user_id = '{}' '''.format(insert_sf, update.message.from_user.id))
+    conn.commit()
+
     i=1
     temp=[]
     reply_keyboard=[]
