@@ -317,6 +317,7 @@ def confirm_remove(bot, update, user_data):
         i+=1
 
     update.message.reply_text("Removed!", reply_markup=ReplyKeyboardMarkup(reply_keyboard))
+    return ConversationHandler.END
 
 def cancel(bot, update, user_data):
     cur.execute('''SELECT * FROM user_data WHERE '{}' = user_id'''.format(update.message.from_user.id))
