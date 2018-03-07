@@ -305,6 +305,7 @@ def to_remove(bot, update, user_data):
 
 def confirm_remove(bot, update, user_data):
     print(user_data["sf"])
+    print(user_data["remove"])
     user_data["sf"] = user_data["sf"].remove(user_data["remove"])
     print(user_data["sf"])
     sf = user_data["sf"]
