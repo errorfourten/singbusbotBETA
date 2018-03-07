@@ -208,17 +208,6 @@ def settings(bot, update, user_data):
         "What would you like to do?"
         "Send /cancel to stop this at any time", reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True)
         )
-
-    cur.execute('''SELECT * FROM user_data WHERE '{}' = user_id'''.format(update.message.from_user.id))
-    conn.commit()
-    row = cur.fetchall()
-    print(row)
-    if row == []:
-        sf = []
-    else:
-        sf = json.loads(row[0][2])
-    user_data["sf"] = sf
-
     return ADD
 
 def add_favourite(bot, update, user_data):
@@ -247,6 +236,16 @@ def to_confirm(bot, update, user_data):
     return CONFIRM
 
 def confirm_favourite(bot, update, user_data):
+    cur.execute('''SELECT * FROM user_data WHERE '{}' = user_id'''.format(update.message.from_user.id))
+    conn.commit()
+    row = cur.fetchall()
+    print(row)
+    if row == []:
+        sf = []
+    else:
+        sf = json.loads(row[0][2])
+    user_data["sf"] = sf
+
     sf = user_data["sf"]
     sf.append([user_data["name"], user_data["busStopCode"]])
     insert_sf = json.dumps(sf)
@@ -268,6 +267,17 @@ def confirm_favourite(bot, update, user_data):
     return ConversationHandler.END
 
 def remove_favourite(bot, update, user_data):
+    user_data.clear()
+    cur.execute('''SELECT * FROM user_data WHERE '{}' = user_id'''.format(update.message.from_user.id))
+    conn.commit()
+    row = cur.fetchall()
+    print(row)
+    if row == []:
+        sf = []
+    else:
+        sf = json.loads(row[0][2])
+    user_data["sf"] = sf
+
     sf = user_data["sf"]
     i=1
     temp=[]
