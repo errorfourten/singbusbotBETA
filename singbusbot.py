@@ -260,7 +260,7 @@ def confirm_favourite(bot, update, user_data):
         if i%2==0:
         	reply_keyboard.append(temp)
         	temp=[]
-        if (i%2==1 and i+1 == len(sf)):
+        if (i%2==1 and i == len(sf)):
             reply_keyboard.append(temp)
         i+=1
 
@@ -289,7 +289,7 @@ def remove_favourite(bot, update, user_data):
         if i%2==0:
         	reply_keyboard.append(temp)
         	temp=[]
-        if (i%2==1 and i+1 == len(sf)):
+        if (i%2==1 and i == len(sf)):
             reply_keyboard.append(temp)
         i+=1
 
@@ -322,9 +322,8 @@ def confirm_remove(bot, update, user_data):
         if i%2==0:
         	reply_keyboard.append(temp)
         	temp=[]
-        if (i%2==1 and i+1 == len(sf)):
+        if (i%2==1 and i == len(sf)):
             reply_keyboard.append(temp)
-        print(reply_keyboard)
         i+=1
 
     update.message.reply_text("Removed!", reply_markup=ReplyKeyboardMarkup(reply_keyboard))
@@ -348,7 +347,7 @@ def cancel(bot, update, user_data):
         if i%2==0:
         	reply_keyboard.append(temp)
         	temp
-        if (i%2==1 and i+1 == len(sf)):
+        if (i%2==1 and i == len(sf)):
             reply_keyboard.append(temp)
         i+=1
     update.message.reply_text("Ended", reply_markup=ReplyKeyboardMarkup(reply_markup))
