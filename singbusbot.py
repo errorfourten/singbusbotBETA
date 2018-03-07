@@ -211,7 +211,8 @@ def settings(bot, update):
 
     return ADD
 
-def add_favourite(bot, update):
+def add_favourite(bot, update, user_data):
+    user_data.clear()
     update.message.reply_text("Please enter a bus stop code")
     return NAME
 
@@ -229,8 +230,13 @@ def choose_name(bot, update, user_data):
         update.message.reply_text("What would you like to name: {} - {}?".format(busStopCode, busStopName))
         return POSITION
 
-def choose_position(bot, update, user_data):
+def to_confirm(bot, update, user_data):
     user_data["name"] = update.message.text
+    reply_keyboard = [["Yes", "No"]]
+    update.message.reply_text("Please confirm that you would like to add {} - {}".format(user_data["name"], user_data["busStopCode"]), reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
+    return CONFIRM
+
+def confirm_favourite(bot, update, user_data):
     cur.execute('''SELECT * FROM user_data WHERE '{}' = user_id'''.format(update.message.from_user.id))
     conn.commit()
     row = cur.fetchall()
@@ -239,29 +245,13 @@ def choose_position(bot, update, user_data):
         sf = []
     else:
         sf = json.loads(row[0][2])
-    print(sf)
     user_data["sf"] = sf
-    i=1
-    temp=[]
-    reply_keyboard=[]
-    for x in sf:
-    	temp.append(x[0])
-    	if i%2==0:
-    		reply_keyboard.append(temp)
-    		temp=[]
-    	i+=1
 
-    update.message.reply_text("Choose a position for this bus stop", reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
-    return CONFIRM
-
-def confirm_favourite(bot, update, user_data):
-    sf = user_data["sf"]
     for x in sf:
         if update.message.text in x:
             index = sf.index(x)
     sf[index] = [user_data["name"], user_data["busStopCode"]]
     insert_sf = json.dumps(sf)
-    print(sf)
     cur.execute('''INSERT INTO user_data (user_id, username, favourite, state) VALUES ('{}', '{}', '{}', 1) ON CONFLICT (user_id) DO UPDATE SET favourite = '{}' '''.format(update.message.from_user.id, update.message.from_user.username, insert_sf, insert_sf))
     conn.commit()
 
@@ -275,7 +265,7 @@ def confirm_favourite(bot, update, user_data):
         	temp=[]
         i+=1
 
-    update.message.reply_text("Confirm position of {} is at {}".format(user_data["busStopCode"], update.message.text), reply_markup=ReplyKeyboardMarkup(reply_keyboard))
+    update.message.reply_text("Added!", reply_markup=ReplyKeyboardMarkup(reply_keyboard))
     user_data.clear()
     return ConversationHandler.END
 
@@ -298,10 +288,10 @@ def main():
         entry_points=[CommandHandler('settings', settings)],
 
         states={
-            ADD: [RegexHandler("^Add Favourite$", add_favourite)],
+            ADD: [RegexHandler("^Add Favourite$", add_favourite, pass_user_data=True)],
             NAME: [MessageHandler(Filters.text, choose_name, pass_user_data=True)],
-            POSITION: [MessageHandler(Filters.text, choose_position, pass_user_data=True)],
-            CONFIRM: [RegexHandler("\d", confirm_favourite, pass_user_data=True)]
+            POSITION: [MessageHandler(Filters.text, to_confirm, pass_user_data=True)],
+            CONFIRM: [RegexHandler("Yes", confirm_favourite, pass_user_data=True), RegexHandler("No", add_favourite, pass_user_data=True)],
         },
 
         fallbacks=[CommandHandler("cancel",cancel, pass_user_data=True)]
