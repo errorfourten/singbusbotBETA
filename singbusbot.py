@@ -321,7 +321,15 @@ def confirm_remove(bot, update, user_data):
     update.message.reply_text("Removed!", reply_markup=ReplyKeyboardMarkup(reply_keyboard))
 
 def cancel(bot, update, user_data):
-    sf = user_data["sf"]
+    cur.execute('''SELECT * FROM user_data WHERE '{}' = user_id'''.format(update.message.from_user.id))
+    conn.commit()
+    row = cur.fetchall()
+    print(row)
+    if row == []:
+        sf = []
+    else:
+        sf = json.loads(row[0][2])
+
     i=1
     temp=[]
     reply_keyboard=[]
