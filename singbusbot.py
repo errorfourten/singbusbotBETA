@@ -323,7 +323,7 @@ def confirm_remove(bot, update, user_data):
         	reply_keyboard.append(temp)
         	temp=[]
         if (i%2==1 and i+1 == len(sf)):
-            reply_keyboard.append(temp
+            reply_keyboard.append(temp)
         print(reply_keyboard)
         i+=1
 
