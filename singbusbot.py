@@ -304,7 +304,9 @@ def to_remove(bot, update, user_data):
     return REMOVECONFIRM
 
 def confirm_remove(bot, update, user_data):
+    print(user_data["sf"])
     user_data["sf"] = user_data["sf"].remove(user_data["remove"])
+    print(user_data["sf"])
     sf = user_data["sf"]
     i=1
     temp=[]
@@ -319,6 +321,7 @@ def confirm_remove(bot, update, user_data):
     update.message.reply_text("Removed!", reply_markup=ReplyKeyboardMarkup(reply_keyboard))
 
 def cancel(bot, update, user_data):
+    sf = user_data["sf"]
     i=1
     temp=[]
     reply_keyboard=[]
