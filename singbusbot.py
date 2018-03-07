@@ -246,10 +246,12 @@ def confirm_favourite(bot, update, user_data):
     else:
         sf = json.loads(row[0][2])
     user_data["sf"] = sf
-
+    
+    index = 0
     for x in sf:
         if update.message.text in x:
             index = sf.index(x)
+
     sf[index] = [user_data["name"], user_data["busStopCode"]]
     insert_sf = json.dumps(sf)
     cur.execute('''INSERT INTO user_data (user_id, username, favourite, state) VALUES ('{}', '{}', '{}', 1) ON CONFLICT (user_id) DO UPDATE SET favourite = '{}' '''.format(update.message.from_user.id, update.message.from_user.username, insert_sf, insert_sf))
