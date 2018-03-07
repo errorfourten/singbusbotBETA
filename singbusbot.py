@@ -38,7 +38,7 @@ class TimedOutFilter(logging.Filter):
 def commands(bot, update):
     text = telegramCommands.check_commands(bot, update, update.message.text)
     if update.message.text == '/start':
-        cur.execute('''INSERT INTO user_data (user_id, username, favourite, state) VALUES ('{}', '{}', '{}', 1) ON CONFLICT (user_id) DO NOTHING'''.format(update.message.from_user.id, update.message.from_user.username, '[["1", "0"],["2", "0"],["3", "0"],["4", "0"]]'))
+        cur.execute('''INSERT INTO user_data (user_id, username, favourite, state) VALUES ('{}', '{}', '{}', 1) ON CONFLICT (user_id) DO NOTHING'''.format(update.message.from_user.id, update.message.from_user.username, '[]'))
         conn.commit()
     if text == False:
         logging.info("Invalid Command: %s [%s] (%s), %s", update.message.from_user.first_name, update.message.from_user.username, update.message.from_user.id, update.message.text)
@@ -201,13 +201,23 @@ def update_bus_data(bot, update):
 
 ADD, NAME, POSITION, CONFIRM = range(4)
 
-def settings(bot, update):
+def settings(bot, update, user_data):
     print("User trying to access settings")
     reply_keyboard = [["Add Favourite", "Remove Favourite"]]
     update.message.reply_text(
         "What would you like to do?"
         "Send /cancel to stop this at any time", reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True)
         )
+
+    cur.execute('''SELECT * FROM user_data WHERE '{}' = user_id'''.format(update.message.from_user.id))
+    conn.commit()
+    row = cur.fetchall()
+    print(row)
+    if row == []:
+        sf = []
+    else:
+        sf = json.loads(row[0][2])
+    user_data["sf"] = sf
 
     return ADD
 
@@ -237,22 +247,8 @@ def to_confirm(bot, update, user_data):
     return CONFIRM
 
 def confirm_favourite(bot, update, user_data):
-    cur.execute('''SELECT * FROM user_data WHERE '{}' = user_id'''.format(update.message.from_user.id))
-    conn.commit()
-    row = cur.fetchall()
-    print(row)
-    if row == []:
-        sf = []
-    else:
-        sf = json.loads(row[0][2])
-    user_data["sf"] = sf
-    
-    index = 0
-    for x in sf:
-        if update.message.text in x:
-            index = sf.index(x)
-
-    sf[index] = [user_data["name"], user_data["busStopCode"]]
+    sf = user_data["sf"]
+    sf.append([user_data["name"], user_data["busStopCode"]])
     insert_sf = json.dumps(sf)
     cur.execute('''INSERT INTO user_data (user_id, username, favourite, state) VALUES ('{}', '{}', '{}', 1) ON CONFLICT (user_id) DO UPDATE SET favourite = '{}' '''.format(update.message.from_user.id, update.message.from_user.username, insert_sf, insert_sf))
     conn.commit()
@@ -271,9 +267,58 @@ def confirm_favourite(bot, update, user_data):
     user_data.clear()
     return ConversationHandler.END
 
+def remove_favourite(bot, update, user_data):
+    sf = user_data["sf"]
+    i=1
+    temp=[]
+    reply_keyboard=[]
+    for x in sf:
+        temp.append(x[0])
+        if i%2==0:
+        	reply_keyboard.append(temp)
+        	temp=[]
+        i+=1
+
+    update.message.reply_text("What bus stop would you like to remove?", reply_markup=ReplyKeyboardMarkup(reply_keyboard))
+    return REMOVE
+
+def to_remove(bot, update, user_data):
+    sf = user_data["sf"]
+    for x in sf:
+        if update.message.text in x:
+            index = sf.index(x)
+    to_remove = sf[index]
+    user_data["remove"] = to_remove
+    reply_keyboard = [["Yes", "No"]]
+    update.message.reply_text("Are you sure you want to remove {} - {}?".format(to_remove[0], to_remove[1]), reply_markup=ReplyKeyboardMarkup(reply_keyboard))
+    return REMOVECONFIRM
+
+def confirm_remove(bot, update, user_data):
+    user_data["sf"] = user_data["sf"].remove(user_data["remove"])
+    sf = user_data["sf"]
+    i=1
+    temp=[]
+    reply_keyboard=[]
+    for x in sf:
+        temp.append(x[0])
+        if i%2==0:
+        	reply_keyboard.append(temp)
+        	temp=[]
+        i+=1
+
+    update.message.reply_text("Removed!", reply_markup=ReplyKeyboardMarkup(reply_keyboard))
+
 def cancel(bot, update, user_data):
-    reply_markup = telegram.ReplyKeyboardRemove()
-    update.message.reply_text("Ended", reply_markup=reply_markup)
+    i=1
+    temp=[]
+    reply_keyboard=[]
+    for x in sf:
+        temp.append(x[0])
+        if i%2==0:
+        	reply_keyboard.append(temp)
+        	temp=[]
+        i+=1
+    update.message.reply_text("Ended", reply_markup=ReplyKeyboardMarkup(reply_markup))
     user_data.clear()
     return ConversationHandler.END
 
@@ -287,13 +332,15 @@ def main():
     bus_handler = MessageHandler(Filters.text, send_bus_timings)
     unknown_handler = MessageHandler(Filters.all, unknown)
     settings_handler = ConversationHandler(
-        entry_points=[CommandHandler('settings', settings)],
+        entry_points=[CommandHandler('settings', settings, pass_user_data=True)],
 
         states={
-            ADD: [RegexHandler("^Add Favourite$", add_favourite, pass_user_data=True)],
+            ADD: [RegexHandler("^Add Favourite$", add_favourite, pass_user_data=True), RegexHandler("^Remove Favourite$", remove_favourite, pass_user_data=True)],
             NAME: [MessageHandler(Filters.text, choose_name, pass_user_data=True)],
             POSITION: [MessageHandler(Filters.text, to_confirm, pass_user_data=True)],
             CONFIRM: [RegexHandler("Yes", confirm_favourite, pass_user_data=True), RegexHandler("No", add_favourite, pass_user_data=True)],
+            REMOVE: [MessageHandler(Filters.text, to_remove, pass_user_data=True)],
+            REMOVECONFIRM: [RegexHandler("Yes", confirm_remove, pass_user_data=True), RegexHandler("No", cancel, pass_user_data=True)]
         },
 
         fallbacks=[CommandHandler("cancel",cancel, pass_user_data=True)]
