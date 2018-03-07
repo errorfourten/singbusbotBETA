@@ -239,7 +239,7 @@ def choose_position(bot, update, user_data):
         sf = []
     else:
         sf = json.loads(row[0][2])
-
+    print(sf)
     user_data["sf"] = sf
     i=1
     temp=[]
