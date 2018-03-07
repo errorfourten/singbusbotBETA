@@ -199,7 +199,7 @@ def update_bus_data(bot, update):
     updateBusData.main()
     logging.info("Updated Bus Data")
 
-ADD, NAME, POSITION, CONFIRM = range(4)
+ADD, NAME, POSITION, CONFIRM, REMOVE, REMOVECONFIRM = range(6)
 
 def settings(bot, update, user_data):
     print("User trying to access settings")
