@@ -304,7 +304,7 @@ def to_remove(bot, update, user_data):
     to_remove = sf[index]
     user_data["remove"] = to_remove
     reply_keyboard = [["Yes", "No"]]
-    update.message.reply_text("Are you sure you want to remove {} - {}?".format(to_remove[0], to_remove[1]), reply_markup=ReplyKeyboardMarkup(reply_keyboard). one_time_keyboard=True)
+    update.message.reply_text("Are you sure you want to remove {} - {}?".format(to_remove[0], to_remove[1]), reply_markup=ReplyKeyboardMarkup(reply_keyboard), one_time_keyboard=True)
     return REMOVECONFIRM
 
 def confirm_remove(bot, update, user_data):
