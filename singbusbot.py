@@ -256,10 +256,13 @@ def choose_position(bot, update, user_data):
 
 def confirm_favourite(bot, update, user_data):
     sf = user_data["sf"]
-    sf[int(update.message.text)-1] = [user_data["name"], user_data["busStopCode"]]
-    sf='"'+str(sf)+'"'
+    for x in sf:
+        if update.message.text in x:
+            index = sf.index(x)
+    sf[index] = [user_data["name"], user_data["busStopCode"]]
+    insert_sf = json.dumps(sf)
     print(sf)
-    cur.execute('''INSERT INTO user_data (user_id, username, favourite, state) VALUES ('{}', '{}', {}, 1) ON CONFLICT (user_id) DO UPDATE SET favourite = {}'''.format(update.message.from_user.id, update.message.from_user.username, sf, sf))
+    cur.execute('''INSERT INTO user_data (user_id, username, favourite, state) VALUES ('{}', '{}', '{}', 1) ON CONFLICT (user_id) DO UPDATE SET favourite = {}'''.format(update.message.from_user.id, update.message.from_user.username, insert_sf, insert_sf))
     conn.commit()
 
     i=1
