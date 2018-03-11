@@ -237,7 +237,7 @@ def settings(bot, update, user_data):
     sf = fetch_user_data(update)
 
     #If user has no favourites, no remove option will be given
-    if sf = []:
+    if sf == []:
         reply_keyboard = [["Add Favourite"]]
     else:
         reply_keyboard = [["Add Favourite", "Remove Favourite"]]
