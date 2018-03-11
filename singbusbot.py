@@ -234,7 +234,13 @@ def fetch_user_data(update):
 #Settings menu
 def settings(bot, update, user_data):
     logging.info("Accessing settings: %s [%s] (%s)", update.message.from_user.first_name, update.message.from_user.username, update.message.from_user.id)
-    reply_keyboard = [["Add Favourite", "Remove Favourite"]]
+    sf = fetch_user_data(update)
+
+    #If user has no favourites, no remove option will be given
+    if sf = []:
+        reply_keyboard = [["Add Favourite"]]
+    else:
+        reply_keyboard = [["Add Favourite", "Remove Favourite"]]
     update.message.reply_text(
         "What would you like to do?\n"
         "Send /cancel to stop this at any time", reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True)
@@ -363,7 +369,7 @@ def main():
         conversation_timeout = 30
     )
 
-    job.run_daily(update_bus_data, datetime.time(7))
+    job.run_daily(update_bus_data, datetime.time(19))
     dispatcher.add_handler(settings_handler)
     dispatcher.add_handler(command_handler)
     dispatcher.add_handler(refresh_handler)
