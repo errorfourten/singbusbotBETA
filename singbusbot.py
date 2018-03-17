@@ -283,7 +283,7 @@ def confirm_favourite(bot, update, user_data):
     #Adds new favourite to the list
     sf.append([user_data["name"], user_data["busStopCode"]])
     insert_sf = json.dumps(sf)
-    cur.execute('''INSERT INTO user_data (user_id, username, favourite, state) VALUES ('%s', %s, %s, 1) ON CONFLICT (user_id) DO UPDATE SET favourite = '%s'; ''', (update.message.from_user.id, update.message.from_user.username, insert_sf, insert_sf))
+    cur.execute('''INSERT INTO user_data (user_id, username, favourite, state) VALUES ('%s', %s, %s, 1) ON CONFLICT (user_id) DO UPDATE SET favourite = %s; ''', (update.message.from_user.id, update.message.from_user.username, insert_sf, insert_sf))
     conn.commit()
 
     reply_keyboard = generate_reply_keyboard(sf)
