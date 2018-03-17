@@ -24,7 +24,7 @@ conn = psycopg2.connect(
 cur = conn.cursor()
 
 #Creates a table in the database if it does not exist
-cur.execute("CREATE TABLE IF NOT EXISTS user_data(user_id TEXT, username TEXT, favourite TEXT, state int, PRIMARY KEY (user_id));")
+cur.execute("CREATE TABLE IF NOT EXISTS user_data(user_id TEXT, username TEXT, first_name TEXT, favourite TEXT, state int, PRIMARY KEY (user_id));")
 conn.commit()
 
 #Start telegram wrapper & initate logging module
@@ -43,7 +43,7 @@ def commands(bot, update):
     text = telegramCommands.check_commands(bot, update, update.message.text)
     if update.message.text == '/start':
         #Adds a new row of data for new users
-        cur.execute('''INSERT INTO user_data (user_id, username, favourite, state) VALUES ('%s', '%s', '%s', 1) ON CONFLICT (user_id) DO NOTHING''', (update.message.from_user.id, update.message.from_user.username, '[]'))
+        cur.execute('''INSERT INTO user_data (user_id, username, first_name, favourite, state) VALUES ('%s', %s, %s, %s, 1) ON CONFLICT (user_id) DO NOTHING''', (update.message.from_user.id, update.message.from_user.username, update.message.from_user.first_name, '[]'))
         conn.commit()
     if text == False:
         logging.info("Invalid Command: %s [%s] (%s), %s", update.message.from_user.first_name, update.message.from_user.username, update.message.from_user.id, update.message.text)
@@ -100,7 +100,7 @@ def check_valid_favourite(update):
     if row == []:
         sf = []
     else:
-        sf = json.loads(row[0][2])
+        sf = json.loads(row[0][3])
     for x in sf:
     	isit = message in x[0]
     	if isit == True:
@@ -283,7 +283,7 @@ def confirm_favourite(bot, update, user_data):
     #Adds new favourite to the list
     sf.append([user_data["name"], user_data["busStopCode"]])
     insert_sf = json.dumps(sf)
-    cur.execute('''INSERT INTO user_data (user_id, username, favourite, state) VALUES ('%s', %s, %s, 1) ON CONFLICT (user_id) DO UPDATE SET favourite = %s; ''', (update.message.from_user.id, update.message.from_user.username, insert_sf, insert_sf))
+    cur.execute('''INSERT INTO user_data (user_id, username, first_name, favourite, state) VALUES ('%s', %s, %s, %s, 1) ON CONFLICT (user_id) DO UPDATE SET favourite = %s; ''', (update.message.from_user.id, update.message.from_user.username, update.message.from_user.first_name, insert_sf, insert_sf))
     conn.commit()
 
     reply_keyboard = generate_reply_keyboard(sf)
