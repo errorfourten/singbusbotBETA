@@ -43,7 +43,7 @@ def commands(bot, update):
     text = telegramCommands.check_commands(bot, update, update.message.text)
     if update.message.text == '/start':
         #Adds a new row of data for new users
-        cur.execute('''INSERT INTO user_data (user_id, username, favourite, state) VALUES ('{}', '{}', '{}', 1) ON CONFLICT (user_id) DO NOTHING'''.format(update.message.from_user.id, update.message.from_user.username, '[]'))
+        cur.execute('''INSERT INTO user_data (user_id, username, favourite, state) VALUES ('%s', '%s', '%s', 1) ON CONFLICT (user_id) DO NOTHING''', (update.message.from_user.id, update.message.from_user.username, '[]'))
         conn.commit()
     if text == False:
         logging.info("Invalid Command: %s [%s] (%s), %s", update.message.from_user.first_name, update.message.from_user.username, update.message.from_user.id, update.message.text)
@@ -95,7 +95,7 @@ def get_time(pjson, x, NextBus):
 def check_valid_favourite(update):
     user = update.message.chat.id
     message = update.message.text
-    cur.execute('''SELECT * FROM user_data WHERE '{}' = user_id'''.format(update.message.from_user.id))
+    cur.execute('''SELECT * FROM user_data WHERE '%s' = user_id''', (update.message.from_user.id,))
     row = cur.fetchall()
     if row == []:
         sf = []
@@ -222,7 +222,7 @@ def generate_reply_keyboard(sf):
     return reply_keyboard
 
 def fetch_user_data(update):
-    cur.execute('''SELECT * FROM user_data WHERE '{}' = user_id'''.format(update.message.from_user.id))
+    cur.execute('''SELECT * FROM user_data WHERE '%s' = user_id''', (update.message.from_user.id, ))
     conn.commit()
     row = cur.fetchall()
     if row == []:
@@ -283,7 +283,7 @@ def confirm_favourite(bot, update, user_data):
     #Adds new favourite to the list
     sf.append([user_data["name"], user_data["busStopCode"]])
     insert_sf = json.dumps(sf)
-    cur.execute('''INSERT INTO user_data (user_id, username, favourite, state) VALUES ('{}', '{}', '{}', 1) ON CONFLICT (user_id) DO UPDATE SET favourite = '{}' '''.format(update.message.from_user.id, update.message.from_user.username, insert_sf, insert_sf))
+    cur.execute('''INSERT INTO user_data (user_id, username, favourite, state) VALUES ('%s', '%s', '%s', 1) ON CONFLICT (user_id) DO UPDATE SET favourite = '%s'; ''', (update.message.from_user.id, update.message.from_user.username, insert_sf, insert_sf))
     conn.commit()
 
     reply_keyboard = generate_reply_keyboard(sf)
@@ -323,7 +323,7 @@ def confirm_remove(bot, update, user_data):
     user_data["sf"].remove(user_data["remove"])
     sf = user_data["sf"]
     insert_sf = json.dumps(sf)
-    cur.execute('''UPDATE user_data SET favourite = '{}' WHERE user_id = '{}' '''.format(insert_sf, update.message.from_user.id))
+    cur.execute('''UPDATE user_data SET favourite = '%s' WHERE user_id = '%s' ''', (insert_sf, update.message.from_user.id))
     conn.commit()
 
     reply_keyboard = generate_reply_keyboard(sf)
