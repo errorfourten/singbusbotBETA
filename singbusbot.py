@@ -142,7 +142,8 @@ def send_bus_timings(bot, update, isCallback=False):
         return
 
     else:
-        text += "*{} - {}*\n".format(busStopCode,busStopName)
+        header = "*{} - {}*\n".format(busStopCode,busStopName)
+        text += header
 
         #HTTP Request to check bus timings
         url = "http://datamall2.mytransport.sg/ltaodataservice/BusArrivalv2?BusStopCode="
@@ -156,7 +157,7 @@ def send_bus_timings(bot, update, isCallback=False):
         #For each bus service that is returned
         for service in pjson["Services"]:
             nextBusTime = get_time(pjson, x, "NextBus") #Get next bus timing
-            if nextBusTime == False:
+            if nextBusTime == False: #If there are no buses coming at all, display NA
                 timeLeft = "NA"
             else:
                 try:
@@ -192,6 +193,8 @@ def send_bus_timings(bot, update, isCallback=False):
 
             x+=1
 
+        if text == header:
+            text += "No more buses at this hour"
     #Format of inline refresh button
     button_list = [
         [
