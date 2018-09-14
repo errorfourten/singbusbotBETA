@@ -156,7 +156,7 @@ def send_bus_timings(bot, update, isCallback=False):
         #For each bus service that is returned
         for service in pjson["Services"]:
             nextBusTime = get_time(pjson, x, "NextBus") #Get next bus timing
-            if nextBusTime = False:
+            if nextBusTime == False:
                 timeLeft = "NA"
             else:
                 try:
