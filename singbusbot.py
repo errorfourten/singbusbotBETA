@@ -99,6 +99,7 @@ def check_valid_bus_stop(message):
         return (False, False)
 
 def get_time(pjson, x, NextBus):
+    print(pjson["Services"][x][NextBus])
     return datetime.datetime.strptime(pjson["Services"][x][NextBus]["EstimatedArrival"].split("+")[0], "%Y-%m-%dT%H:%M:%S")
 
 def check_valid_favourite(update):
@@ -109,7 +110,7 @@ def check_valid_favourite(update):
     if row == []:
         sf = []
     else:
-        sf = json.loads(row[0][2])
+        sf = json.loads(row[0][3])
     for x in sf:
     	isit = message in x[0]
     	if isit == True:
@@ -237,7 +238,7 @@ def fetch_user_data(update):
     if row == []:
         sf = []
     else:
-        sf = json.loads(row[0][2])
+        sf = json.loads(row[0][3])
     return sf
 
 #Settings menu
