@@ -53,6 +53,7 @@ def commands(bot, update):
         row = cur.fetchall()
         for x in row:
             chat_id = json.loads(row[0][0])
+            print(chat_id)
             bot.send_message(chat_id=chat_id, text="", parse_mode="HTML")
     elif text == False:
         logging.info("Invalid Command: %s [%s] (%s), %s", update.message.from_user.first_name, update.message.from_user.username, update.message.from_user.id, update.message.text)
@@ -99,7 +100,6 @@ def check_valid_bus_stop(message):
         return (False, False)
 
 def get_time(pjson, x, NextBus):
-    print(pjson["Services"][x][NextBus])
     if (pjson["Services"][x][NextBus]["EstimatedArrival"].split("+")[0] == ""):
         return False
     else:
@@ -193,7 +193,7 @@ def send_bus_timings(bot, update, isCallback=False):
 
             x+=1
 
-        if text == header:
+        if (text == header): #If no results were returned
             text += "No more buses at this hour"
     #Format of inline refresh button
     button_list = [

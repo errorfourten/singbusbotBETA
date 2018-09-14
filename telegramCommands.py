@@ -22,6 +22,6 @@ def check_commands(bot, update, message):
         if message[1:] == False:
             return False
         else:
-            return message[1:]
+            return " ".join(message[1:])
     else:
         return False
