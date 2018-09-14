@@ -100,7 +100,10 @@ def check_valid_bus_stop(message):
 
 def get_time(pjson, x, NextBus):
     print(pjson["Services"][x][NextBus])
-    return datetime.datetime.strptime(pjson["Services"][x][NextBus]["EstimatedArrival"].split("+")[0], "%Y-%m-%dT%H:%M:%S")
+    if (pjson["Services"][x][NextBus]["EstimatedArrival"].split("+")[0] = ""):
+        return False
+    else:
+        return datetime.datetime.strptime(pjson["Services"][x][NextBus]["EstimatedArrival"].split("+")[0], "%Y-%m-%dT%H:%M:%S")
 
 def check_valid_favourite(update):
     user = update.message.chat.id
@@ -153,18 +156,21 @@ def send_bus_timings(bot, update, isCallback=False):
         #For each bus service that is returned
         for service in pjson["Services"]:
             nextBusTime = get_time(pjson, x, "NextBus") #Get next bus timing
-            try:
-                followingBusTime = get_time(pjson, x, "NextBus2") # Get following bus timing
-            except:
-                followingBusTime = False #If there is no following bus timiing, skip
-            currentTime = (datetime.datetime.utcnow()+datetime.timedelta(hours=8)).replace(microsecond=0) #Get current GMT +8 time
-            if currentTime > nextBusTime: #If API messes up, return next 2 bus timings instead
-                nextBusTime = get_time(pjson, x, "NextBus2")
+            if nextBusTime = False:
+                timeLeft = "NA"
+            else:
                 try:
-                    followingBusTime = get_time(pjson, x, "NextBus3")
+                    followingBusTime = get_time(pjson, x, "NextBus2") # Get following bus timing
                 except:
-                    followingBusTime = False
-            timeLeft = str((nextBusTime - currentTime)).split(":")[1] #Return time next for next bus
+                    followingBusTime = False #If there is no following bus timing, skip
+                currentTime = (datetime.datetime.utcnow()+datetime.timedelta(hours=8)).replace(microsecond=0) #Get current GMT +8 time
+                if currentTime > nextBusTime: #If API messes up, return next 2 bus timings instead
+                    nextBusTime = get_time(pjson, x, "NextBus2")
+                    try:
+                        followingBusTime = get_time(pjson, x, "NextBus3")
+                    except:
+                        followingBusTime = False
+                timeLeft = str((nextBusTime - currentTime)).split(":")[1] #Return time next for next bus
 
             if followingBusTime == False: #If there is no bus arriving, display NA
                 timeFollowingLeft = "NA"
