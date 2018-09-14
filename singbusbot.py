@@ -104,11 +104,10 @@ def check_valid_favourite(update):
     message = update.message.text
     cur.execute('''SELECT * FROM user_data WHERE '%s' = user_id''', (update.message.from_user.id,))
     row = cur.fetchall()
-    print(row)
     if row == []:
         sf = []
     else:
-        sf = json.loads(row[0][3])
+        sf = json.loads(row[0][2])
     for x in sf:
     	isit = message in x[0]
     	if isit == True:
@@ -236,7 +235,7 @@ def fetch_user_data(update):
     if row == []:
         sf = []
     else:
-        sf = json.loads(row[0][3])
+        sf = json.loads(row[0][2])
     return sf
 
 #Settings menu
