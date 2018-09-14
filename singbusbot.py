@@ -100,7 +100,7 @@ def check_valid_bus_stop(message):
 
 def get_time(pjson, x, NextBus):
     print(pjson["Services"][x][NextBus])
-    if (pjson["Services"][x][NextBus]["EstimatedArrival"].split("+")[0] = ""):
+    if (pjson["Services"][x][NextBus]["EstimatedArrival"].split("+")[0] == ""):
         return False
     else:
         return datetime.datetime.strptime(pjson["Services"][x][NextBus]["EstimatedArrival"].split("+")[0], "%Y-%m-%dT%H:%M:%S")
