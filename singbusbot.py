@@ -45,6 +45,13 @@ def commands(bot, update):
         #Adds a new row of data for new users
         cur.execute('''INSERT INTO user_data (user_id, username, first_name, favourite, state) VALUES ('%s', %s, %s, %s, 1) ON CONFLICT (user_id) DO NOTHING''', (update.message.from_user.id, update.message.from_user.username, update.message.from_user.first_name, '[]'))
         conn.commit()
+    if update.message.text == '/broadcast' and update.message.from_user.id == owner_id:
+        #Broadcasts messages if user is the owner
+        cur.execute('''SELECT * FROM user_data WHERE state = 1''')
+        row = cur.fetchall()
+        for x in row:
+            chat_id = json.loads(row[0][0])
+            bot.send_message(chat_id=chat_id, text="", parse_mode="HTML")
     if text == False:
         logging.info("Invalid Command: %s [%s] (%s), %s", update.message.from_user.first_name, update.message.from_user.username, update.message.from_user.id, update.message.text)
         bot.send_message(chat_id=update.message.chat_id, text="Please enter a valid command", parse_mode="HTML")
@@ -228,7 +235,7 @@ def fetch_user_data(update):
     if row == []:
         sf = []
     else:
-        sf = json.loads(row[0][2])
+        sf = json.loads(row[0][3])
     return sf
 
 #Settings menu
@@ -366,7 +373,7 @@ def main():
 
         fallbacks=[CommandHandler("cancel",cancel, pass_user_data=True)],
         allow_reentry = True,
-        conversation_timeout = 30
+        conversation_timeout = 60
     )
 
     job.run_daily(update_bus_data, datetime.time(19))
