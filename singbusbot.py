@@ -483,6 +483,7 @@ def main():
     dispatcher.add_handler(settings_handler)
     dispatcher.add_handler(command_handler)
     dispatcher.add_handler(refresh_handler)
+    dispatcher.add_handler(busService_handler)
     dispatcher.add_handler(bus_handler)
     dispatcher.add_handler(unknown_handler)
     dispatcher.add_error_handler(error_callback)
