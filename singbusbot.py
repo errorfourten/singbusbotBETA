@@ -47,7 +47,7 @@ def commands(bot, update):
         row = cur.fetchall()
         for x in row:
             chat_id = json.loads(x[0])
-            try:
+            try: #Try to send a message to the user. If the user has blocked the bot, just skip
                 bot.send_message(chat_id=chat_id, text=text, parse_mode="HTML")
             except:
                 pass
@@ -229,7 +229,77 @@ def update_bus_data(bot, update):
     updateBusData.main()
     logging.info("Updated Bus Data")
 
-#Initialise some variables for the ConversationHandler function
+class FilterBusService(BaseFilter):
+    def filter(self, message):
+        with open("busServiceNo.txt", "rb") as afile:
+            busServiceNo = pickle.load(afile)
+        return message.text in busServiceNo
+
+busService_filter = FilterBusService()
+
+BUSSERVICE = range(1)
+
+def askBusRoute(bot, update, user_data):
+    busNumber == update.message.text
+
+    with open("busService.txt", "rb") as afile:
+        busServiceDB = pickle.load(afile)
+
+    reply_keyboard = []
+    for x in range(len(out)):
+        busStopCodeStart, busStopNameStart = check_valid_bus_stop(out[x]["BusStopCode"][0])
+        busStopCodeEnd, busStopNameEnd = check_valid_bus_stop(out[x]["BusStopCode"][-1])
+        text = ["%s (%s) - %s (%s)", busStopNameStart, busStopCodeStart, busStopNameEnd, busStopCodeEnd]
+        reply_keyboard.append(text)
+    user_data["busService"] = [busNumber, reply_keyboard]
+    update.message.reply_text("Which direction?", reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
+    return BUSSERVICE
+
+def findBusRoute(bot, update, user_data):
+    reply = update.message.text
+    if [reply] in user_data["busService"][1]:
+        direction = user_data["busService"][1].index([reply])
+        busNumber = user_data["busService"][0]
+
+        with open("busService.txt", "rb") as afile:
+            busServiceDB = pickle.load(afile)
+
+        out = [element for element in busServiceDB if element['serviceNo'] == busNumber]
+        reply = ""
+        reply += "<b>Bus " + str(busNumber) + "</b>\n"
+
+        for x in range(len(out[direction]["BusStopCode"])):
+            busStopCode = out[direction]["BusStopCode"][x]
+
+            url = "http://datamall2.mytransport.sg/ltaodataservice/BusArrivalv2?BusStopCode="
+            url += busStopCode
+            request = urllib.request.Request(url)
+            request.add_header('AccountKey', LTA_Account_Key)
+            response = urllib.request.urlopen(request)
+            pjson = json.loads(response.read().decode("utf-8"))
+
+            sev = [element for element in pjson["Services"] if element['ServiceNo'] == busNumber]
+            if (sev[0]["NextBus"]["EstimatedArrival"].split("+")[0] == ""):
+                timeLeft= "NA"
+            else:
+                nextBusTime = datetime.datetime.strptime(sev[0]["NextBus"]["EstimatedArrival"].split("+")[0], "%Y-%m-%dT%H:%M:%S")
+                currentTime = (datetime.datetime.utcnow()+datetime.timedelta(hours=8)).replace(microsecond=0)
+                timeLeft = str((nextBusTime - currentTime)).split(":")[1]
+            busStopCode, busStopName = check_valid_bus_stop(busStopCode)
+            text = "%s (%s)    ", busStopName, busStopCode
+            if timeLeft == "00":
+                text += "Arr"
+            else:
+                text += timeLeft + " min\n"
+            reply += text
+
+        update.message.reply_text(reply)
+    else:
+        update.message.reply_text("Invalid")
+    user_data.clear()
+    return ConversationHandler.END
+
+#Initialise some variables for the service ConversationHandler function
 ADD, NAME, POSITION, CONFIRM, REMOVE, REMOVECONFIRM = range(6)
 
 def generate_reply_keyboard(sf):
@@ -377,6 +447,15 @@ def main():
     refresh_handler = CallbackQueryHandler(refresh_timings)
     bus_handler = MessageHandler(Filters.text, send_bus_timings)
     unknown_handler = MessageHandler(Filters.all, unknown)
+
+    busService_handler = ConversationHandler(
+        entry_points=[MessageHandler(busService_filter, askBusRoute, pass_user_data=True)],
+
+        states={
+            BUSSERVICE: [MessageHandler(Filters.text), ..., pass_user_data=True]
+        }
+    )
+
     settings_handler = ConversationHandler(
         entry_points=[CommandHandler('settings', settings, pass_user_data=True)],
 
