@@ -40,10 +40,8 @@ class TimedOutFilter(logging.Filter):
 
 #Handles any commands
 def commands(bot, update):
-    print(update.message.text)
+    print(owner_id)
     print(update.message.from_user.id)
-    if '/broadcast' in update.message.text:
-        print("yes1")
     if update.message.from_user.id == owner_id:
         print("yes2")
 
