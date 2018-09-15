@@ -257,6 +257,9 @@ def askBusRoute(bot, update, user_data):
 
 def findBusRoute(bot, update, user_data):
     reply = update.message.text
+    sf = fetch_user_data(update)
+    reply_keyboard = generate_reply_keyboard(sf)
+
     if [reply] in user_data["busService"][1]:
         direction = user_data["busService"][1].index([reply])
         busNumber = user_data["busService"][0]
@@ -293,9 +296,9 @@ def findBusRoute(bot, update, user_data):
                 text += timeLeft + " min\n"
             reply += text
 
-        update.message.reply_text(reply)
+        update.message.reply_text(reply, reply_markup=ReplyKeyboardMarkup(reply_keyboard))
     else:
-        update.message.reply_text("Invalid")
+        update.message.reply_text("Invalid", reply_markup=ReplyKeyboardMarkup(reply_keyboard))
     user_data.clear()
     return ConversationHandler.END
 
@@ -453,7 +456,10 @@ def main():
 
         states={
             BUSSERVICE: [MessageHandler(Filters.text, findBusRoute, pass_user_data=True)]
-        }
+        },
+
+        fallbacks=[CommandHandler("cancel",cancel, pass_user_data=True)]
+        conversation_timeout = 60
     )
 
     settings_handler = ConversationHandler(
