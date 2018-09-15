@@ -244,13 +244,14 @@ def askBusRoute(bot, update, user_data):
 
     with open("busService.txt", "rb") as afile:
         busServiceDB = pickle.load(afile)
-        
+
     out = [element for element in busServiceDB if element['serviceNo'] == busNumber]
     reply_keyboard = []
     for x in range(len(out)):
         busStopCodeStart, busStopNameStart = check_valid_bus_stop(out[x]["BusStopCode"][0])
         busStopCodeEnd, busStopNameEnd = check_valid_bus_stop(out[x]["BusStopCode"][-1])
-        text = ["%s (%s) - %s (%s)", busStopNameStart, busStopCodeStart, busStopNameEnd, busStopCodeEnd]
+        st = "%s (%s) - %s (%s)" % (busStopNameStart, busStopCodeStart, busStopNameEnd, busStopCodeEnd)
+        text = [st]
         reply_keyboard.append(text)
     user_data["busService"] = [busNumber, reply_keyboard]
     update.message.reply_text("Which direction?", reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
@@ -290,7 +291,7 @@ def findBusRoute(bot, update, user_data):
                 currentTime = (datetime.datetime.utcnow()+datetime.timedelta(hours=8)).replace(microsecond=0)
                 timeLeft = str((nextBusTime - currentTime)).split(":")[1]
             busStopCode, busStopName = check_valid_bus_stop(busStopCode)
-            text = "%s (%s)    ", busStopName, busStopCode
+            text = "%s (%s)    " % (busStopName, busStopCode)
             if timeLeft == "00":
                 text += "Arr"
             else:
