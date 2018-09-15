@@ -47,7 +47,11 @@ def commands(bot, update):
         row = cur.fetchall()
         for x in row:
             chat_id = json.loads(x[0])
-            bot.send_message(chat_id=chat_id, text=text, parse_mode="HTML")
+            try:
+                bot.send_message(chat_id=chat_id, text=text, parse_mode="HTML")
+            except:
+                pass
+        logging.info("Broadcast complete")
     else:
         if update.message.text == '/start':
             #Adds a new row of data for new users
