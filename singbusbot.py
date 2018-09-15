@@ -51,9 +51,11 @@ def commands(bot, update):
         logging.info("Command: %s [%s] (%s), %s", update.message.from_user.first_name, update.message.from_user.username, update.message.from_user.id, update.message.text)
         bot.send_message(chat_id=update.message.chat_id, text=text, parse_mode="HTML")
     elif '/broadcast' in update.message.text and update.message.from_user.id == owner_id:
+        print("it's broadcasting!")
         #Broadcasts messages if user is the owner
         cur.execute('''SELECT * FROM user_data WHERE state = 1''')
         row = cur.fetchall()
+        print(row)
         for x in row:
             chat_id = json.loads(row[0][0])
             print(chat_id)
