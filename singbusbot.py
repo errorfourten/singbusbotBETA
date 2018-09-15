@@ -40,11 +40,6 @@ class TimedOutFilter(logging.Filter):
 
 #Handles any commands
 def commands(bot, update):
-    print(owner_id)
-    print(update.message.from_user.id)
-    if update.message.from_user.id == owner_id:
-        print("yes2")
-
     text = telegramCommands.check_commands(bot, update, update.message.text)
     if update.message.text == '/start':
         #Adds a new row of data for new users
@@ -59,7 +54,7 @@ def commands(bot, update):
         for x in row:
             chat_id = json.loads(row[0][0])
             print(chat_id)
-            bot.send_message(chat_id=chat_id, text="", parse_mode="HTML")
+            bot.send_message(chat_id=chat_id, text=text, parse_mode="HTML")
     elif text == False:
         logging.info("Invalid Command: %s [%s] (%s), %s", update.message.from_user.first_name, update.message.from_user.username, update.message.from_user.id, update.message.text)
         bot.send_message(chat_id=update.message.chat_id, text="Please enter a valid command", parse_mode="HTML")
