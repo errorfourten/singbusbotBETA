@@ -52,7 +52,7 @@ def commands(bot, update):
         conn.commit()
         logging.info("Command: %s [%s] (%s), %s", update.message.from_user.first_name, update.message.from_user.username, update.message.from_user.id, update.message.text)
         bot.send_message(chat_id=update.message.chat_id, text=text, parse_mode="HTML")
-    elif '/broadcast' in update.message.text and update.message.from_user.id == owner_id:
+    elif '/broadcast' in update.message.text and update.message.from_user.id == int(owner_id):
         #Broadcasts messages if user is the owner
         cur.execute('''SELECT * FROM user_data WHERE state = 1''')
         row = cur.fetchall()
