@@ -41,23 +41,26 @@ class TimedOutFilter(logging.Filter):
 #Handles any commands
 def commands(bot, update):
     text = telegramCommands.check_commands(bot, update, update.message.text)
-    if update.message.text == '/start':
-        #Adds a new row of data for new users
-        cur.execute('''INSERT INTO user_data (user_id, username, first_name, favourite, state) VALUES ('%s', %s, %s, %s, 1) ON CONFLICT (user_id) DO NOTHING''', (update.message.from_user.id, update.message.from_user.username, update.message.from_user.first_name, '[]'))
-        conn.commit()
-        logging.info("Command: %s [%s] (%s), %s", update.message.from_user.first_name, update.message.from_user.username, update.message.from_user.id, update.message.text)
-        bot.send_message(chat_id=update.message.chat_id, text=text, parse_mode="HTML")
-    elif '/broadcast' in update.message.text and update.message.from_user.id == int(owner_id):
+    if '/broadcast' in update.message.text and update.message.from_user.id == int(owner_id):
         #Broadcasts messages if user is the owner
         cur.execute('''SELECT * FROM user_data WHERE state = 1''')
         row = cur.fetchall()
         for x in row:
-            chat_id = json.loads(row[x][0])
+            chat_id = json.loads(x[0])
             bot.send_message(chat_id=chat_id, text=text, parse_mode="HTML")
-    elif text == False:
-        logging.info("Invalid Command: %s [%s] (%s), %s", update.message.from_user.first_name, update.message.from_user.username, update.message.from_user.id, update.message.text)
-        bot.send_message(chat_id=update.message.chat_id, text="Please enter a valid command", parse_mode="HTML")
     else:
+        if update.message.text == '/start':
+            #Adds a new row of data for new users
+            cur.execute('''INSERT INTO user_data (user_id, username, first_name, favourite, state) VALUES ('%s', %s, %s, %s, 1) ON CONFLICT (user_id) DO UPDATE SET state = 1''', (update.message.from_user.id, update.message.from_user.username, update.message.from_user.first_name, '[]'))
+            conn.commit()
+        elif '/stop' in update.message.text:
+            cur.execute('''UPDATE user_data SET state = 0 WHERE user_id = '%s' ''', (update.message.from_user.id))
+            conn.commit()
+        elif text == False:
+            logging.info("Invalid Command: %s [%s] (%s), %s", update.message.from_user.first_name, update.message.from_user.username, update.message.from_user.id, update.message.text)
+            bot.send_message(chat_id=update.message.chat_id, text="Please enter a valid command", parse_mode="HTML")
+
+        #Logs and sends message
         logging.info("Command: %s [%s] (%s), %s", update.message.from_user.first_name, update.message.from_user.username, update.message.from_user.id, update.message.text)
         bot.send_message(chat_id=update.message.chat_id, text=text, parse_mode="HTML")
 
