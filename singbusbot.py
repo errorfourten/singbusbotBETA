@@ -38,7 +38,7 @@ class TimedOutFilter(logging.Filter):
         if "Error while getting Updates: Timed out" in record.getMessage():
             return False
 
-#Handles /start commands
+#Handles any commands
 def commands(bot, update):
     text = telegramCommands.check_commands(bot, update, update.message.text)
     if update.message.text == '/start':
@@ -47,7 +47,7 @@ def commands(bot, update):
         conn.commit()
         logging.info("Command: %s [%s] (%s), %s", update.message.from_user.first_name, update.message.from_user.username, update.message.from_user.id, update.message.text)
         bot.send_message(chat_id=update.message.chat_id, text=text, parse_mode="HTML")
-    elif update.message.text == '/broadcast' and update.message.from_user.id == owner_id:
+    elif '/broadcast' in update.message.text and update.message.from_user.id == owner_id:
         #Broadcasts messages if user is the owner
         cur.execute('''SELECT * FROM user_data WHERE state = 1''')
         row = cur.fetchall()
