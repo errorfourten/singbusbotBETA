@@ -452,7 +452,7 @@ def main():
         entry_points=[MessageHandler(busService_filter, askBusRoute, pass_user_data=True)],
 
         states={
-            BUSSERVICE: [MessageHandler(Filters.text), ..., pass_user_data=True]
+            BUSSERVICE: [MessageHandler(Filters.text, findBusRoute, pass_user_data=True)]
         }
     )
 
