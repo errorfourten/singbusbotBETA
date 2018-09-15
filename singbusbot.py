@@ -240,7 +240,7 @@ busService_filter = FilterBusService()
 BUSSERVICE = range(1)
 
 def askBusRoute(bot, update, user_data):
-    busNumber == update.message.text
+    busNumber = update.message.text
 
     with open("busService.txt", "rb") as afile:
         busServiceDB = pickle.load(afile)
