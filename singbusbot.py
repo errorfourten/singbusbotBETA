@@ -244,7 +244,8 @@ def askBusRoute(bot, update, user_data):
 
     with open("busService.txt", "rb") as afile:
         busServiceDB = pickle.load(afile)
-
+        
+    out = [element for element in busServiceDB if element['serviceNo'] == busNumber]
     reply_keyboard = []
     for x in range(len(out)):
         busStopCodeStart, busStopNameStart = check_valid_bus_stop(out[x]["BusStopCode"][0])
