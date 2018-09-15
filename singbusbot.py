@@ -40,6 +40,9 @@ class TimedOutFilter(logging.Filter):
 
 #Handles any commands
 def commands(bot, update):
+    print(update.message.text)
+    print(update.message.from_user.id)
+
     text = telegramCommands.check_commands(bot, update, update.message.text)
     if update.message.text == '/start':
         #Adds a new row of data for new users
