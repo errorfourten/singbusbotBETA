@@ -54,7 +54,7 @@ def commands(bot, update):
             cur.execute('''INSERT INTO user_data (user_id, username, first_name, favourite, state) VALUES ('%s', %s, %s, %s, 1) ON CONFLICT (user_id) DO UPDATE SET state = 1''', (update.message.from_user.id, update.message.from_user.username, update.message.from_user.first_name, '[]'))
             conn.commit()
         elif '/stop' in update.message.text:
-            cur.execute('''UPDATE user_data SET state = 0 WHERE user_id = '%s' ''', update.message.from_user.id)
+            cur.execute('''UPDATE user_data SET state = 0 WHERE user_id = '%s' ''', (update.message.from_user.id,))
             conn.commit()
         elif text == False:
             logging.info("Invalid Command: %s [%s] (%s), %s", update.message.from_user.first_name, update.message.from_user.username, update.message.from_user.id, update.message.text)
