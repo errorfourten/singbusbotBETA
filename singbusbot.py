@@ -299,13 +299,16 @@ def findBusRoute(bot, update, user_data): #Once user has replied with direction,
                 break
             else: #Else, return the timings
                 timeLeft, timeFollowingLeft = get_time(service[0]) #and gets the arrival time
-                busStopCode, busStopName = check_valid_bus_stop(busStopCode)
-                text = "<b>%s </b>( /%s )   " % (busStopName, busStopCode)
-                if timeLeft == "00":
-                    text += "Arr"
-                else:
-                    text += timeLeft + " min"
-                message += text + "\n"
+            busStopCode, busStopName = check_valid_bus_stop(busStopCode)
+            text = "<b>%s </b>( /%s )   " % (busStopName, busStopCode)
+            if timeLeft == "00":
+                text += "Arr"
+            else:
+                text += timeLeft + " min"
+            message += text + "\n"
+
+        if message == "<i>%s</i>" % header:
+            message += "No more buses at this hour"
         job_sendTyping.schedule_removal()
         update.message.reply_text(message, reply_markup=ReplyKeyboardMarkup(reply_keyboard), parse_mode="HTML")
         logging.info("Service Request: %s [%s] (%s), %s", update.message.from_user.first_name, update.message.from_user.username, update.message.from_user.id, header)
