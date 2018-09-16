@@ -52,21 +52,21 @@ def commands(bot, update):
             except:
                 pass
         logging.info("Broadcast complete")
-    else:
-        if update.message.text == '/start':
-            #Adds a new row of data for new users
-            cur.execute('''INSERT INTO user_data (user_id, username, first_name, favourite, state) VALUES ('%s', %s, %s, %s, 1) ON CONFLICT (user_id) DO UPDATE SET state = 1''', (update.message.from_user.id, update.message.from_user.username, update.message.from_user.first_name, '[]'))
-            conn.commit()
-        elif '/stop' in update.message.text:
-            cur.execute('''UPDATE user_data SET state = 0 WHERE user_id = '%s' ''', (update.message.from_user.id,))
-            conn.commit()
-        elif text == False:
-            logging.info("Invalid Command: %s [%s] (%s), %s", update.message.from_user.first_name, update.message.from_user.username, update.message.from_user.id, update.message.text)
-            bot.send_message(chat_id=update.message.chat_id, text="Please enter a valid command", parse_mode="HTML")
+    elif update.message.text == '/start':
+        #Adds a new row of data for new users
+        cur.execute('''INSERT INTO user_data (user_id, username, first_name, favourite, state) VALUES ('%s', %s, %s, %s, 1) ON CONFLICT (user_id) DO UPDATE SET state = 1''', (update.message.from_user.id, update.message.from_user.username, update.message.from_user.first_name, '[]'))
+        conn.commit()
+    elif '/stop' in update.message.text:
+        cur.execute('''UPDATE user_data SET state = 0 WHERE user_id = '%s' ''', (update.message.from_user.id,))
+        conn.commit()
+    elif text == False:
+        logging.info("Invalid Command: %s [%s] (%s), %s", update.message.from_user.first_name, update.message.from_user.username, update.message.from_user.id, update.message.text)
+        bot.send_message(chat_id=update.message.chat_id, text="Please enter a valid command", parse_mode="HTML")
+        return
 
-        #Logs and sends message
-        logging.info("Command: %s [%s] (%s), %s", update.message.from_user.first_name, update.message.from_user.username, update.message.from_user.id, update.message.text)
-        bot.send_message(chat_id=update.message.chat_id, text=text, parse_mode="HTML")
+    #Logs and sends message
+    logging.info("Command: %s [%s] (%s), %s", update.message.from_user.first_name, update.message.from_user.username, update.message.from_user.id, update.message.text)
+    bot.send_message(chat_id=update.message.chat_id, text=text, parse_mode="HTML")
 
 #Handles invalid commands & logs request
 def unknown(bot, update):
@@ -296,13 +296,12 @@ def findBusRoute(bot, update, user_data): #Once user has replied with direction,
             else: #Else, return the timings
                 timeLeft, timeFollowingLeft = get_time(service[0]) #and gets the arrival time
                 busStopCode, busStopName = check_valid_bus_stop(busStopCode)
-                text = "<b>" + busStopName + "</b>   "
+                text = "<b>%s (/%s)</b>" % (busStopName, busStopCode)
                 if timeLeft == "00":
                     text += "Arr"
                 else:
                     text += timeLeft + " min"
                 message += text + "\n"
-            logging.info(timeLeft)
         job_sendTyping.schedule_removal()
         update.message.reply_text(message, reply_markup=ReplyKeyboardMarkup(reply_keyboard), parse_mode="HTML")
         logging.info("Service Request: %s [%s] (%s), %s", update.message.from_user.first_name, update.message.from_user.username, update.message.from_user.id, header)
