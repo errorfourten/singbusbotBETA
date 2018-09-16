@@ -275,9 +275,8 @@ def findBusRoute(bot, update, user_data): #Once user has replied with direction,
             busServiceDB = pickle.load(afile)
 
         out = [element for element in busServiceDB if element['serviceNo'] == busNumber] #Gets all directions of bus service
-        message = ""
-        header = "<i>Bus %s (%s)</i>\n" % (str(busNumber), reply)
-        message += header
+        header = "Bus %s (%s)\n" % (str(busNumber), reply)
+        message = "<i>%s</i>" % header
 
         for busStopCode in out[direction]["BusStopCode"]: #For every bus stop code in that direction
             url = "http://datamall2.mytransport.sg/ltaodataservice/BusArrivalv2?BusStopCode="
@@ -290,6 +289,7 @@ def findBusRoute(bot, update, user_data): #Once user has replied with direction,
             service = [element for element in pjson["Services"] if element['ServiceNo'] == busNumber] #Select the correct bus service from raw data
             if service == []: #If there are no more buses for the day
                 message += "No more buses at this hour"
+                break
             else: #Else, return the timings
                 timeLeft, timeFollowingLeft = get_time(service[0]) #and gets the arrival time
                 busStopCode, busStopName = check_valid_bus_stop(busStopCode)
