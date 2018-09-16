@@ -259,7 +259,7 @@ def askBusRoute(bot, update, user_data): #Takes in bus service and outputs direc
     return BUSSERVICE
 
 def findBusRoute(bot, update, user_data): #Once user has replied with direction, output the arrival timings
-    bot.send_chat_action(chat_id=update.message.from_user, action=telegram.ChatAction.TYPING) #Tells user that bot is processing
+    bot.send_chat_action(chat_id=update.message.from_user, action=ChatAction.TYPING) #Tells user that bot is processing
 
     reply = update.message.text
 
@@ -488,9 +488,9 @@ def main():
 
     job.run_daily(update_bus_data, datetime.time(19))
     dispatcher.add_handler(settings_handler)
-    dispatcher.add_handler(command_handler)
     dispatcher.add_handler(refresh_handler)
     dispatcher.add_handler(busService_handler)
+    dispatcher.add_handler(command_handler)
     dispatcher.add_handler(bus_handler)
     dispatcher.add_handler(unknown_handler)
     dispatcher.add_error_handler(error_callback)
