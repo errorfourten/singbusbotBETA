@@ -122,11 +122,14 @@ def get_time(service): #Pass pjson data to return timeLeft and timeFollowingLeft
 
         currentTime = (datetime.datetime.utcnow()+datetime.timedelta(hours=8)).replace(microsecond=0)
         if currentTime > nextBusTime: #If API messes up, return following bus timing
-            nextBusTime = datetime.datetime.strptime(service["NextBus2"]["EstimatedArrival"].split("+")[0], "%Y-%m-%dT%H:%M:%S")
             try:
-                followingBusTime = datetime.datetime.strptime(service["NextBus3"]["EstimatedArrival"].split("+")[0], "%Y-%m-%dT%H:%M:%S")
+                nextBusTime = datetime.datetime.strptime(service["NextBus2"]["EstimatedArrival"].split("+")[0], "%Y-%m-%dT%H:%M:%S")
+                try:
+                    followingBusTime = datetime.datetime.strptime(service["NextBus3"]["EstimatedArrival"].split("+")[0], "%Y-%m-%dT%H:%M:%S")
+                except:
+                    followingBusTime = "NA"
             except:
-                followingBusTime = "NA"
+                return "NA", "NA" #If next bus timing does not exist, return NA
 
         timeLeft = str((nextBusTime - currentTime)).split(":")[1] #Return time next for next bus
         if followingBusTime != "NA":
