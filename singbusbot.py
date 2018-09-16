@@ -59,8 +59,8 @@ def commands(bot, update):
     elif '/stop' in update.message.text:
         cur.execute('''UPDATE user_data SET state = 0 WHERE user_id = '%s' ''', (update.message.from_user.id,))
         conn.commit()
-    elif re.search("/(\d\d\d\d\d)", text):
-        update.message.text = re.search("/(\d\d\d\d\d)", text).group(1)
+    elif re.search("/(\d\d\d\d\d)", update.message.text):
+        update.message.text = re.search("/(\d\d\d\d\d)", update.message.text).group(1)
         send_bus_timings(bot, update)
         return
     elif text == False:
