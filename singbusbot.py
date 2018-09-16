@@ -288,7 +288,7 @@ def findBusRoute(bot, update, user_data): #Once user has replied with direction,
             pjson = json.loads(response.read().decode("utf-8")) #Get the raw data from LTA
 
             service = [element for element in pjson["Services"] if element['ServiceNo'] == busNumber] #Select the correct bus service from raw data
-            if service = []: #If there are no more buses for the day
+            if service == []: #If there are no more buses for the day
                 message += "No more buses at this hour"
             else: #Else, return the timings
                 timeLeft, timeFollowingLeft = get_time(service[0]) #and gets the arrival time
