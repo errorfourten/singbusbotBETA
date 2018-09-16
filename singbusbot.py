@@ -258,8 +258,11 @@ def askBusRoute(bot, update, user_data): #Takes in bus service and outputs direc
 
     return BUSSERVICE
 
+def sendTyping(bot, job):
+    bot.send_chat_action(chat_id=job.context, action="typing", timeout=30)
+
 def findBusRoute(bot, update, user_data): #Once user has replied with direction, output the arrival timings
-    bot.send_chat_action(chat_id=update.message.from_user.id, action="typing", timeout=30) #Tells user that bot is processing
+    job_sendTyping = job.run_repeating(sendTyping, interval = 5, first=0, context=update.message.from_user.id)
 
     reply = update.message.text
 
@@ -305,7 +308,7 @@ def findBusRoute(bot, update, user_data): #Once user has replied with direction,
     else:
         update.message.reply_text("Invalid direction", reply_markup=ReplyKeyboardMarkup(reply_keyboard), parse_mode="HTML")
         logging.info("Invalid direction: %s [%s] (%s), %s", update.message.from_user.first_name, update.message.from_user.username, update.message.from_user.id, reply)
-
+    job_sendTyping.schedule_removal()
     user_data.clear()
     return ConversationHandler.END
 
