@@ -108,16 +108,16 @@ def check_valid_bus_stop(message):
 def get_time(service): #Pass pjson data to return timeLeft and timeFollowingLeft
 
     if (service["NextBus"]["EstimatedArrival"].split("+")[0] == ""):
-        return "NA", "NA"
+        return "NA", "NA" #If next bus timing does not exist, return NA
     else:
-        nextBusTime = datetime.datetime.strptime(service["NextBus"]["EstimatedArrival"].split("+")[0], "%Y-%m-%dT%H:%M:%S")
+        nextBusTime = datetime.datetime.strptime(service["NextBus"]["EstimatedArrival"].split("+")[0], "%Y-%m-%dT%H:%M:%S") #Get next bus timing
         try:
             followingBusTime = datetime.datetime.strptime(service["NextBus2"]["EstimatedArrival"].split("+")[0], "%Y-%m-%dT%H:%M:%S")
         except:
             followingBusTime = "NA"
 
         currentTime = (datetime.datetime.utcnow()+datetime.timedelta(hours=8)).replace(microsecond=0)
-        if currentTime > nextBusTime:
+        if currentTime > nextBusTime: #If API messes up, return following bus timing
             nextBusTime = datetime.datetime.strptime(service["NextBus2"]["EstimatedArrival"].split("+")[0], "%Y-%m-%dT%H:%M:%S")
             try:
                 followingBusTime = datetime.datetime.strptime(service["NextBus3"]["EstimatedArrival"].split("+")[0], "%Y-%m-%dT%H:%M:%S")
@@ -226,7 +226,7 @@ def update_bus_data(bot, update):
     updateBusData.main()
     logging.info("Updated Bus Data")
 
-class FilterBusService(BaseFilter):
+class FilterBusService(BaseFilter): #Create a new telegram filter, filter out bus Services
     def filter(self, message):
         with open("busServiceNo.txt", "rb") as afile:
             busServiceNo = pickle.load(afile)
@@ -234,65 +234,78 @@ class FilterBusService(BaseFilter):
 
 busService_filter = FilterBusService()
 
+#ConversationHandler for bus services
+
 BUSSERVICE = range(1)
 
-def askBusRoute(bot, update, user_data):
+def askBusRoute(bot, update, user_data): #Takes in bus service and outputs direction, waiting for user's confirmation
     busNumber = update.message.text
 
     with open("busService.txt", "rb") as afile:
         busServiceDB = pickle.load(afile)
 
-    out = [element for element in busServiceDB if element['serviceNo'] == busNumber]
+    out = [element for element in busServiceDB if element['serviceNo'] == busNumber] #Find the direction(s) out that bus service
     reply_keyboard = []
-    for x in range(len(out)):
+    for x in range(len(out)): #Generates a reply_keyboard with the directions
         busStopCodeStart, busStopNameStart = check_valid_bus_stop(out[x]["BusStopCode"][0])
         busStopCodeEnd, busStopNameEnd = check_valid_bus_stop(out[x]["BusStopCode"][-1])
         st = "%s - %s" % (busStopNameStart, busStopNameEnd)
         text = [st]
         reply_keyboard.append(text)
-    user_data["busService"] = [busNumber, reply_keyboard]
-    update.message.reply_text("Which direction?", reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
+    user_data["busService"] = [busNumber, reply_keyboard] #Pass the generated data to user_data
+    update.message.reply_text("Which direction?", reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True)) #Asks user for input
+    logging.info("Service Request: %s [%s] (%s), %s", update.message.from_user.first_name, update.message.from_user.username, update.message.from_user.id, busNumber)
+
     return BUSSERVICE
 
-def findBusRoute(bot, update, user_data):
+def findBusRoute(bot, update, user_data): #Once user has replied with direction, output the arrival timings
+    bot.send_chat_action(chat_id=update.message.from_user, action=telegram.ChatAction.TYPING) #Tells user that bot is processing
+
     reply = update.message.text
+
+    #Create the usual reply_keyboard
     sf = fetch_user_data(update)
     reply_keyboard = generate_reply_keyboard(sf)
 
-    if [reply] in user_data["busService"][1]:
-        direction = user_data["busService"][1].index([reply])
+    if [reply] in user_data["busService"][1]: #Ensures that the user reply is a valid one
+        direction = user_data["busService"][1].index([reply]) #Gets the direction in terms of a int
         busNumber = user_data["busService"][0]
 
         with open("busService.txt", "rb") as afile:
             busServiceDB = pickle.load(afile)
 
-        out = [element for element in busServiceDB if element['serviceNo'] == busNumber]
-        reply = ""
-        reply += "<b>Bus " + str(busNumber) + "</b>\n"
+        out = [element for element in busServiceDB if element['serviceNo'] == busNumber] #Gets all directions of bus service
+        message = ""
+        header = "<i>Bus %s (%s)</i>\n" % (str(busNumber), reply)
+        message += header
 
-        for x in range(len(out[direction]["BusStopCode"])):
-            busStopCode = out[direction]["BusStopCode"][x]
-
+        for busStopCode in out[direction]["BusStopCode"]: #For every bus stop code in that direction
             url = "http://datamall2.mytransport.sg/ltaodataservice/BusArrivalv2?BusStopCode="
             url += busStopCode
             request = urllib.request.Request(url)
             request.add_header('AccountKey', LTA_Account_Key)
             response = urllib.request.urlopen(request)
-            pjson = json.loads(response.read().decode("utf-8"))
+            pjson = json.loads(response.read().decode("utf-8")) #Get the raw data from LTA
 
-            sev = [element for element in pjson["Services"] if element['ServiceNo'] == busNumber]
-            timeLeft, timeFollowingLeft = get_time(sev[0])
-            busStopCode, busStopName = check_valid_bus_stop(busStopCode)
-            text = "<b>" + busStopName + "</b>   "
-            if timeLeft == "00":
-                text += "Arr"
-            else:
-                text += timeLeft + " min"
-            reply += text + "\n"
+            service = [element for element in pjson["Services"] if element['ServiceNo'] == busNumber] #Select the correct bus service from raw data
+            if service = []: #If there are no more buses for the day
+                message += "No more buses at this hour"
+            else: #Else, return the timings
+                timeLeft, timeFollowingLeft = get_time(service[0]) #and gets the arrival time
+                busStopCode, busStopName = check_valid_bus_stop(busStopCode)
+                text = "<b>" + busStopName + "</b>   "
+                if timeLeft == "00":
+                    text += "Arr"
+                else:
+                    text += timeLeft + " min"
+                message += text + "\n"
 
         update.message.reply_text(reply, reply_markup=ReplyKeyboardMarkup(reply_keyboard), parse_mode="HTML")
+        logging.info("Service Request: %s [%s] (%s), %s", update.message.from_user.first_name, update.message.from_user.username, update.message.from_user.id, header)
     else:
-        update.message.reply_text("Invalid", reply_markup=ReplyKeyboardMarkup(reply_keyboard), parse_mode="HTML")
+        update.message.reply_text("Invalid direction", reply_markup=ReplyKeyboardMarkup(reply_keyboard), parse_mode="HTML")
+        logging.info("Invalid direction: %s [%s] (%s), %s", update.message.from_user.first_name, update.message.from_user.username, update.message.from_user.id, reply)
+
     user_data.clear()
     return ConversationHandler.END
 
