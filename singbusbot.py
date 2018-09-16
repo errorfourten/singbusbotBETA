@@ -263,7 +263,6 @@ def sendTyping(bot, job):
 
 def findBusRoute(bot, update, user_data): #Once user has replied with direction, output the arrival timings
     job_sendTyping = job.run_repeating(sendTyping, interval = 5, first=0, context=update.message.from_user.id)
-
     reply = update.message.text
 
     #Create the usual reply_keyboard
@@ -302,13 +301,13 @@ def findBusRoute(bot, update, user_data): #Once user has replied with direction,
                 else:
                     text += timeLeft + " min"
                 message += text + "\n"
-
+        job_sendTyping.schedule_removal()
         update.message.reply_text(message, reply_markup=ReplyKeyboardMarkup(reply_keyboard), parse_mode="HTML")
         logging.info("Service Request: %s [%s] (%s), %s", update.message.from_user.first_name, update.message.from_user.username, update.message.from_user.id, header)
     else:
+        job_sendTyping.schedule_removal()
         update.message.reply_text("Invalid direction", reply_markup=ReplyKeyboardMarkup(reply_keyboard), parse_mode="HTML")
         logging.info("Invalid direction: %s [%s] (%s), %s", update.message.from_user.first_name, update.message.from_user.username, update.message.from_user.id, reply)
-    job_sendTyping.schedule_removal()
     user_data.clear()
     return ConversationHandler.END
 
