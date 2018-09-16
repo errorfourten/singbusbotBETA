@@ -1,4 +1,4 @@
-import telegram, json, requests, time, urllib, datetime, updateBusData, pickle, os, sys, telegramCommands, logging, psycopg2
+import telegram, json, requests, time, urllib, datetime, updateBusData, pickle, os, sys, telegramCommands, logging, psycopg2, re
 from telegram import *
 from telegram.ext import *
 from telegram.error import *
@@ -59,6 +59,10 @@ def commands(bot, update):
     elif '/stop' in update.message.text:
         cur.execute('''UPDATE user_data SET state = 0 WHERE user_id = '%s' ''', (update.message.from_user.id,))
         conn.commit()
+    elif re.search("/(\d\d\d\d\d)", line):
+        update.message.text = re.search("/(\d\d\d\d\d)", line).group(1)
+        send_bus_timings(bot, update)
+        return
     elif text == False:
         logging.info("Invalid Command: %s [%s] (%s), %s", update.message.from_user.first_name, update.message.from_user.username, update.message.from_user.id, update.message.text)
         bot.send_message(chat_id=update.message.chat_id, text="Please enter a valid command", parse_mode="HTML")
