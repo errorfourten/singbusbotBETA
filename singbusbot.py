@@ -259,7 +259,7 @@ def askBusRoute(bot, update, user_data): #Takes in bus service and outputs direc
     return BUSSERVICE
 
 def findBusRoute(bot, update, user_data): #Once user has replied with direction, output the arrival timings
-    bot.send_chat_action(chat_id=update.message.from_user.id, action="typing") #Tells user that bot is processing
+    bot.send_chat_action(chat_id=update.message.from_user.id, action="typing", timeout=30) #Tells user that bot is processing
 
     reply = update.message.text
 
@@ -300,7 +300,7 @@ def findBusRoute(bot, update, user_data): #Once user has replied with direction,
                     text += timeLeft + " min"
                 message += text + "\n"
 
-        update.message.reply_text(reply, reply_markup=ReplyKeyboardMarkup(reply_keyboard), parse_mode="HTML")
+        update.message.reply_text(message, reply_markup=ReplyKeyboardMarkup(reply_keyboard), parse_mode="HTML")
         logging.info("Service Request: %s [%s] (%s), %s", update.message.from_user.first_name, update.message.from_user.username, update.message.from_user.id, header)
     else:
         update.message.reply_text("Invalid direction", reply_markup=ReplyKeyboardMarkup(reply_keyboard), parse_mode="HTML")
@@ -495,7 +495,7 @@ def main():
     dispatcher.add_handler(unknown_handler)
     dispatcher.add_error_handler(error_callback)
 
-    updater.start_polling()
+    updater.start_polling(timeout=30)
     updater.idle()
 
 if __name__ == '__main__':
