@@ -259,7 +259,7 @@ def askBusRoute(bot, update, user_data): #Takes in bus service and outputs direc
     return BUSSERVICE
 
 def findBusRoute(bot, update, user_data): #Once user has replied with direction, output the arrival timings
-    bot.send_chat_action(chat_id=update.message.from_user, action=ChatAction.TYPING) #Tells user that bot is processing
+    bot.send_chat_action(chat_id=update.message.from_user.id, action="typing") #Tells user that bot is processing
 
     reply = update.message.text
 
