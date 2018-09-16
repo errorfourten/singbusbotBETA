@@ -296,7 +296,7 @@ def findBusRoute(bot, update, user_data): #Once user has replied with direction,
             else: #Else, return the timings
                 timeLeft, timeFollowingLeft = get_time(service[0]) #and gets the arrival time
                 busStopCode, busStopName = check_valid_bus_stop(busStopCode)
-                text = "<b>%s ( /%s )</b>   " % (busStopName, busStopCode)
+                text = "<b>%s </b>( /%s )   " % (busStopName, busStopCode)
                 if timeLeft == "00":
                     text += "Arr"
                 else:
