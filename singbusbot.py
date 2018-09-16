@@ -114,7 +114,7 @@ def get_time(service): #Pass pjson data to return timeLeft and timeFollowingLeft
         try:
             followingBusTime = datetime.datetime.strptime(service["NextBus2"]["EstimatedArrival"].split("+")[0], "%Y-%m-%dT%H:%M:%S")
         except:
-            followingBusTime = "NA"
+            timeFollowingLeft = "NA"
 
         currentTime = (datetime.datetime.utcnow()+datetime.timedelta(hours=8)).replace(microsecond=0)
         if currentTime > nextBusTime: #If API messes up, return following bus timing
@@ -122,7 +122,7 @@ def get_time(service): #Pass pjson data to return timeLeft and timeFollowingLeft
             try:
                 followingBusTime = datetime.datetime.strptime(service["NextBus3"]["EstimatedArrival"].split("+")[0], "%Y-%m-%dT%H:%M:%S")
             except:
-                followingBusTime = "NA"
+                timeFollowingLeft = "NA"
 
         timeLeft = str((nextBusTime - currentTime)).split(":")[1] #Return time next for next bus
         if followingBusTime != "NA":
@@ -301,6 +301,7 @@ def findBusRoute(bot, update, user_data): #Once user has replied with direction,
                 else:
                     text += timeLeft + " min"
                 message += text + "\n"
+        logging.info("Message complete!")
         job_sendTyping.schedule_removal()
         update.message.reply_text(message, reply_markup=ReplyKeyboardMarkup(reply_keyboard), parse_mode="HTML")
         logging.info("Service Request: %s [%s] (%s), %s", update.message.from_user.first_name, update.message.from_user.username, update.message.from_user.id, header)
