@@ -105,11 +105,30 @@ def check_valid_bus_stop(message):
     if flag!=1:
         return (False, False)
 
-def get_time(pjson, x, NextBus):
-    if (pjson["Services"][x][NextBus]["EstimatedArrival"].split("+")[0] == ""):
-        return False
+def get_time(service): #Pass pjson data to return timeLeft and timeFollowingLeft
+
+    if (service["NextBus"]["EstimatedArrival"].split("+")[0] == ""):
+        return "NA", "NA"
     else:
-        return datetime.datetime.strptime(pjson["Services"][x][NextBus]["EstimatedArrival"].split("+")[0], "%Y-%m-%dT%H:%M:%S")
+        nextBusTime = datetime.datetime.strptime(service["NextBus"]["EstimatedArrival"].split("+")[0], "%Y-%m-%dT%H:%M:%S")
+        try:
+            followingBusTime = datetime.datetime.strptime(service["NextBus2"]["EstimatedArrival"].split("+")[0], "%Y-%m-%dT%H:%M:%S")
+        except:
+            followingBusTime = "NA"
+
+        currentTime = (datetime.datetime.utcnow()+datetime.timedelta(hours=8)).replace(microsecond=0)
+        if currentTime > nextBusTime:
+            nextBusTime = datetime.datetime.strptime(service["NextBus2"]["EstimatedArrival"].split("+")[0], "%Y-%m-%dT%H:%M:%S")
+            try:
+                followingBusTime = datetime.datetime.strptime(service["NextBus3"]["EstimatedArrival"].split("+")[0], "%Y-%m-%dT%H:%M:%S")
+            except:
+                followingBusTime = "NA"
+
+        timeLeft = str((nextBusTime - currentTime)).split(":")[1] #Return time next for next bus
+        if followingBusTime != "NA":
+            timeFollowingLeft = str((followingBusTime - currentTime)).split(":")[1] #Else, return time left for following bus
+
+        return timeLeft, timeFollowingLeft
 
 def check_valid_favourite(update):
     user = update.message.chat.id
@@ -158,31 +177,10 @@ def send_bus_timings(bot, update, isCallback=False):
         request.add_header('AccountKey', LTA_Account_Key)
         response = urllib.request.urlopen(request)
         pjson = json.loads(response.read().decode("utf-8"))
-        x = 0
 
         #For each bus service that is returned
         for service in pjson["Services"]:
-            nextBusTime = get_time(pjson, x, "NextBus") #Get next bus timing
-            if nextBusTime == False: #If there are no buses coming at all, display NA
-                timeLeft = "NA"
-            else:
-                try:
-                    followingBusTime = get_time(pjson, x, "NextBus2") # Get following bus timing
-                except:
-                    followingBusTime = False #If there is no following bus timing, skip
-                currentTime = (datetime.datetime.utcnow()+datetime.timedelta(hours=8)).replace(microsecond=0) #Get current GMT +8 time
-                if currentTime > nextBusTime: #If API messes up, return next 2 bus timings instead
-                    nextBusTime = get_time(pjson, x, "NextBus2")
-                    try:
-                        followingBusTime = get_time(pjson, x, "NextBus3")
-                    except:
-                        followingBusTime = False
-                timeLeft = str((nextBusTime - currentTime)).split(":")[1] #Return time next for next bus
-
-            if followingBusTime == False: #If there is no bus arriving, display NA
-                timeFollowingLeft = "NA"
-            else:
-                timeFollowingLeft = str((followingBusTime - currentTime)).split(":")[1] #Else, return time left for following bus
+            timeLeft, timeFollowingLeft = get_time(service)
 
             #Display time left for each service
             text += service["ServiceNo"]+"    "
@@ -197,7 +195,6 @@ def send_bus_timings(bot, update, isCallback=False):
                 text += timeFollowingLeft+" min"
             text += "\n"
 
-            x+=1
 
         if (text == header): #If no results were returned
             text += "No more buses at this hour"
@@ -250,7 +247,7 @@ def askBusRoute(bot, update, user_data):
     for x in range(len(out)):
         busStopCodeStart, busStopNameStart = check_valid_bus_stop(out[x]["BusStopCode"][0])
         busStopCodeEnd, busStopNameEnd = check_valid_bus_stop(out[x]["BusStopCode"][-1])
-        st = "%s (%s) - %s (%s)" % (busStopNameStart, busStopCodeStart, busStopNameEnd, busStopCodeEnd)
+        st = "%s - %s" % (busStopNameStart, busStopNameEnd)
         text = [st]
         reply_keyboard.append(text)
     user_data["busService"] = [busNumber, reply_keyboard]
@@ -284,23 +281,18 @@ def findBusRoute(bot, update, user_data):
             pjson = json.loads(response.read().decode("utf-8"))
 
             sev = [element for element in pjson["Services"] if element['ServiceNo'] == busNumber]
-            if (sev[0]["NextBus"]["EstimatedArrival"].split("+")[0] == ""):
-                timeLeft= "NA"
-            else:
-                nextBusTime = datetime.datetime.strptime(sev[0]["NextBus"]["EstimatedArrival"].split("+")[0], "%Y-%m-%dT%H:%M:%S")
-                currentTime = (datetime.datetime.utcnow()+datetime.timedelta(hours=8)).replace(microsecond=0)
-                timeLeft = str((nextBusTime - currentTime)).split(":")[1]
+            timeLeft, timeFollowingLeft = get_time(sev[0])
             busStopCode, busStopName = check_valid_bus_stop(busStopCode)
-            text = "%s (%s)    " % (busStopName, busStopCode)
+            text = "<b>" + busStopName + "</b>   "
             if timeLeft == "00":
                 text += "Arr"
             else:
-                text += timeLeft + " min\n"
-            reply += text
+                text += timeLeft + " min"
+            reply += text + "\n"
 
-        update.message.reply_text(reply, reply_markup=ReplyKeyboardMarkup(reply_keyboard))
+        update.message.reply_text(reply, reply_markup=ReplyKeyboardMarkup(reply_keyboard), parse_mode="HTML")
     else:
-        update.message.reply_text("Invalid", reply_markup=ReplyKeyboardMarkup(reply_keyboard))
+        update.message.reply_text("Invalid", reply_markup=ReplyKeyboardMarkup(reply_keyboard), parse_mode="HTML")
     user_data.clear()
     return ConversationHandler.END
 
