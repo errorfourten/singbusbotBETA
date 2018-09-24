@@ -10,16 +10,26 @@ LTA_Account_Key = os.getenv("LTA_Account_Key")
 owner_id = os.getenv("owner_id")
 URL = "https://api.telegram.org/bot{}/".format(TOKEN)
 
+#Connect to Postgres Database locally
+#conn = psycopg2.connect(
+#    database="user_data",
+#    user="postgres",
+#    password="password",
+#    host="127.0.0.1",
+#    port="5432"
+#)
+#cur = conn.cursor()
+
 #Connect to Postgres Database in Heroku
-#parse.uses_netloc.append("postgres")
-#url = parse.urlparse(os.environ["DATABASE_URL"])
+parse.uses_netloc.append("postgres")
+url = parse.urlparse(os.environ["DATABASE_URL"])
 
 conn = psycopg2.connect(
-    database="user_data",
-    user="postgres",
-    password="password",
-    host="127.0.0.1",
-    port="5432"
+    database=url.path[1:],
+    user=url.username,
+    password=url.password,
+    host=url.hostname,
+    port=url.port
 )
 cur = conn.cursor()
 
