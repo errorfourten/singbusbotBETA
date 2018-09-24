@@ -243,7 +243,7 @@ def update_bus_data(bot, update):
     updateBusData.main()
     logging.info("Updated Bus Data")
 
-def serviceUpdate():
+def serviceUpdate(bot, update):
     url = "http://datamall2.mytransport.sg/ltaodataservice/TrainServiceAlerts"
     request = urllib.request.Request(url)
     request.add_header('AccountKey', LTA_Account_Key)
