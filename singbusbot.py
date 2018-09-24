@@ -11,15 +11,15 @@ owner_id = os.getenv("owner_id")
 URL = "https://api.telegram.org/bot{}/".format(TOKEN)
 
 #Connect to Postgres Database in Heroku
-parse.uses_netloc.append("postgres")
-url = parse.urlparse(os.environ["DATABASE_URL"])
+#parse.uses_netloc.append("postgres")
+#url = parse.urlparse(os.environ["DATABASE_URL"])
 
 conn = psycopg2.connect(
-    database=url.path[1:],
-    user=url.username,
-    password=url.password,
-    host=url.hostname,
-    port=url.port
+    database="user_data",
+    user="postgres",
+    password="password",
+    host="127.0.0.1",
+    port="5432"
 )
 cur = conn.cursor()
 
@@ -121,17 +121,12 @@ def get_time(service): #Pass pjson data to return timeLeft and timeFollowingLeft
             followingBusTime = "NA"
 
         currentTime = (datetime.datetime.utcnow()+datetime.timedelta(hours=8)).replace(microsecond=0)
-        if currentTime > nextBusTime: #If API messes up, return following bus timing
-            try:
-                nextBusTime = datetime.datetime.strptime(service["NextBus2"]["EstimatedArrival"].split("+")[0], "%Y-%m-%dT%H:%M:%S")
-                try:
-                    followingBusTime = datetime.datetime.strptime(service["NextBus3"]["EstimatedArrival"].split("+")[0], "%Y-%m-%dT%H:%M:%S")
-                except:
-                    followingBusTime = "NA"
-            except:
-                return "NA", "NA" #If next bus timing does not exist, return NA
 
-        timeLeft = str((nextBusTime - currentTime)).split(":")[1] #Return time next for next bus
+        if currentTime > nextBusTime: #If bus is late...
+            timeLeft = "00"
+        else:
+            timeLeft = str((nextBusTime - currentTime)).split(":")[1] #Return time next for next bus
+
         if followingBusTime != "NA":
             timeFollowingLeft = str((followingBusTime - currentTime)).split(":")[1] #Else, return time left for following bus
         else:
@@ -161,6 +156,7 @@ def send_bus_timings(bot, update, isCallback=False):
     if isCallback == True:
         CallbackQuery = update.callback_query
         message = CallbackQuery.message.text.split()[0]
+        print(CallbackQuery.message.text)
     else:
         #Check if it exists in user's favourites
         message = check_valid_favourite(update)
@@ -238,7 +234,7 @@ class FilterBusService(BaseFilter): #Create a new telegram filter, filter out bu
     def filter(self, message):
         with open("busServiceNo.txt", "rb") as afile:
             busServiceNo = pickle.load(afile)
-        return message.text in busServiceNo
+        return message.text.upper() in busServiceNo
 
 busService_filter = FilterBusService()
 
@@ -247,7 +243,7 @@ busService_filter = FilterBusService()
 BUSSERVICE = range(1)
 
 def askBusRoute(bot, update, user_data): #Takes in bus service and outputs direction, waiting for user's confirmation
-    busNumber = update.message.text
+    busNumber = update.message.text.upper()
 
     with open("busService.txt", "rb") as afile:
         busServiceDB = pickle.load(afile)
@@ -285,8 +281,9 @@ def findBusRoute(bot, update, user_data): #Once user has replied with direction,
             busServiceDB = pickle.load(afile)
 
         out = [element for element in busServiceDB if element['serviceNo'] == busNumber] #Gets all directions of bus service
-        header = "Bus %s (%s)\n" % (str(busNumber), reply)
-        message = "<i>%s</i>" % header
+        header = "Bus %s (%s)" % (str(busNumber), reply)
+        message = "<i>%s</i>\n" % header
+        flag = 0
 
         for busStopCode in out[direction]["BusStopCode"]: #For every bus stop code in that direction
             url = "http://datamall2.mytransport.sg/ltaodataservice/BusArrivalv2?BusStopCode="
@@ -303,14 +300,16 @@ def findBusRoute(bot, update, user_data): #Once user has replied with direction,
                 timeLeft, timeFollowingLeft = get_time(service[0]) #and gets the arrival time
             busStopCode, busStopName = check_valid_bus_stop(busStopCode)
             text = "<b>%s </b>( /%s )   " % (busStopName, busStopCode)
+            if timeLeft != "NA":
+                flag = 1
             if timeLeft == "00":
                 text += "Arr"
             else:
                 text += timeLeft + " min"
             message += text + "\n"
 
-        if message == "<i>%s</i>" % header:
-            message += "No more buses at this hour"
+        if flag == 0:
+            message = "<i>%s</i>\n" % header + "No more buses at this hour"
         job_sendTyping.schedule_removal()
         update.message.reply_text(message, reply_markup=ReplyKeyboardMarkup(reply_keyboard), parse_mode="HTML")
         logging.info("Service Request: %s [%s] (%s), %s", update.message.from_user.first_name, update.message.from_user.username, update.message.from_user.id, header)
