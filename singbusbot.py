@@ -9,6 +9,7 @@ TOKEN = os.getenv("TOKEN")
 LTA_Account_Key = os.getenv("LTA_Account_Key")
 owner_id = os.getenv("owner_id")
 URL = "https://api.telegram.org/bot{}/".format(TOKEN)
+serviceUpdate = ""
 
 #Connect to Postgres Database locally
 #conn = psycopg2.connect(
@@ -52,16 +53,7 @@ class TimedOutFilter(logging.Filter):
 def commands(bot, update):
     text = telegramCommands.check_commands(bot, update, update.message.text)
     if '/broadcast' in update.message.text and update.message.from_user.id == int(owner_id):
-        #Broadcasts messages if user is the owner
-        cur.execute('''SELECT * FROM user_data WHERE state = 1''')
-        row = cur.fetchall()
-        for x in row:
-            chat_id = json.loads(x[0])
-            try: #Try to send a message to the user. If the user has blocked the bot, just skip
-                bot.send_message(chat_id=chat_id, text=text, parse_mode="HTML")
-            except:
-                pass
-        logging.info("Broadcast complete")
+        broacastMessage(text)
     elif update.message.text == '/start':
         #Adds a new row of data for new users
         cur.execute('''INSERT INTO user_data (user_id, username, first_name, favourite, state) VALUES ('%s', %s, %s, %s, 1) ON CONFLICT (user_id) DO UPDATE SET state = 1''', (update.message.from_user.id, update.message.from_user.username, update.message.from_user.first_name, '[]'))
@@ -95,6 +87,17 @@ def error_callback(bot, update, error):
 
 def send_message_to_owner(bot, update):
     bot.send_message(chat_id=owner_id, text=update)
+
+def broacastMessage(text):
+    cur.execute('''SELECT * FROM user_data WHERE state = 1''')
+    row = cur.fetchall()
+    for x in row:
+        chat_id = json.loads(x[0])
+        try: #Try to send a message to the user. If the user has blocked the bot, just skip
+            bot.send_message(chat_id=chat_id, text=text, parse_mode="HTML")
+        except:
+            pass
+    logging.info("Broadcast complete")
 
 def check_valid_bus_stop(message):
     if message == False:
@@ -167,9 +170,9 @@ def send_bus_timings(bot, update, isCallback=False):
         CallbackQuery = update.callback_query
         message = CallbackQuery.message.text.split()[0]
         print(CallbackQuery.message.text)
-    else:
-        #Check if it exists in user's favourites
+    else: #Check if it exists in user's favourites
         message = check_valid_favourite(update)
+
 
     #Call function and assign to variables
     busStopCode, busStopName = check_valid_bus_stop(message)
@@ -239,6 +242,19 @@ def refresh_timings(bot, update):
 def update_bus_data(bot, update):
     updateBusData.main()
     logging.info("Updated Bus Data")
+
+def serviceUpdate():
+    url = "http://datamall2.mytransport.sg/ltaodataservice/TrainServiceAlerts"
+    request = urllib.request.Request(url)
+    request.add_header('AccountKey', LTA_Account_Key)
+    response = urllib.request.urlopen(request)
+    pjson = json.loads(response.read().decode("utf-8"))
+
+    if (pjson["value"]["Message"] != []):
+        if pjson["value"]["Message"][0]["Content"] != serviceUpdate:
+            serviceUpdate = pjson["value"]["Message"][0]["Content"]
+            logging.info("Service update: " + text)
+            broacastMessage(text)
 
 class FilterBusService(BaseFilter): #Create a new telegram filter, filter out bus Services
     def filter(self, message):
@@ -508,6 +524,8 @@ def main():
     )
 
     job.run_daily(update_bus_data, datetime.time(19))
+    job.run_repeating(serviceUpdate, interval=900, first=0)
+
     dispatcher.add_handler(settings_handler)
     dispatcher.add_handler(refresh_handler)
     dispatcher.add_handler(busService_handler)
