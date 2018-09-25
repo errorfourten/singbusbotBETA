@@ -5,10 +5,11 @@ import json, requests, urllib,  pickle, os, sqlite3, shelve
 LTA_Account_Key = os.getenv("LTA_Account_Key")
 
 def updateBusStop():
-    toAdd = []
+    #Initialises array variables
+    toAddCode = []
+    toAddGPS = []
 
-    #Set arbitary range to access all bus stops as API only passes a max of 500 bus stops per call
-    for i in range(0, 10):
+    for i in range(0,10): #Iterate through all data points
         url = "http://datamall2.mytransport.sg/ltaodataservice/BusStops?$skip="
         url += str(i*500)
 
@@ -21,11 +22,14 @@ def updateBusStop():
         #For every row of data, add data to a txt file
         for i in range(len(pjson["value"])):
             x = pjson["value"][i]
-            toAdd.append([x["BusStopCode"], x["Description"], x["RoadName"], x["Latitude"], x["Longitude"]])
+            toAddCode.append([x["BusStopCode"], x["Description"]])
+            toAddGPS.append((x["Latitude"], x["Longitude"]))
+
+    out = [toAddCode, toAddGPS]
 
     #Dump toAdd to a txt file for future use
     with open("busStop.txt", "wb") as outfile:
-        pickle.dump(toAdd, outfile)
+        pickle.dump(out, outfile)
 
 def updateBusService():
     ls = [] #Initialise busService list (database)
