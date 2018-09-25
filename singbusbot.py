@@ -13,15 +13,15 @@ URL = "https://api.telegram.org/bot{}/".format(TOKEN)
 serviceUpdate = ""
 
 #Connect to Postgres Database locally
-conn = psycopg2.connect(
-    database="user_data",
-    user="postgres",
-    password="password",
-    host="127.0.0.1",
-    port="5432"
-)
-cur = conn.cursor()
-'''
+#conn = psycopg2.connect(
+#    database="user_data",
+#    user="postgres",
+#    password="password",
+#    host="127.0.0.1",
+#    port="5432"
+#)
+#cur = conn.cursor()
+
 #Connect to Postgres Database in Heroku
 parse.uses_netloc.append("postgres")
 url = parse.urlparse(os.environ["DATABASE_URL"])
@@ -34,7 +34,7 @@ conn = psycopg2.connect(
     port=url.port
 )
 cur = conn.cursor()
-'''
+
 #Creates a table in the database if it does not exist
 cur.execute("CREATE TABLE IF NOT EXISTS user_data(user_id TEXT, username TEXT, first_name TEXT, favourite TEXT, state int, PRIMARY KEY (user_id));")
 conn.commit()
