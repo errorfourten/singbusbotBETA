@@ -10,7 +10,6 @@ TOKEN = os.getenv("TOKEN")
 LTA_Account_Key = os.getenv("LTA_Account_Key")
 owner_id = os.getenv("owner_id")
 URL = "https://api.telegram.org/bot{}/".format(TOKEN)
-serviceUpdate = ""
 
 #Connect to Postgres Database locally
 #conn = psycopg2.connect(
@@ -54,7 +53,7 @@ class TimedOutFilter(logging.Filter):
 def commands(bot, update):
     text = telegramCommands.check_commands(bot, update, update.message.text)
     if '/broadcast' in update.message.text and update.message.from_user.id == int(owner_id):
-        broacastMessage(text)
+        broadcastMessage(text)
     elif update.message.text == '/start':
         #Adds a new row of data for new users
         cur.execute('''INSERT INTO user_data (user_id, username, first_name, favourite, state) VALUES ('%s', %s, %s, %s, 1) ON CONFLICT (user_id) DO UPDATE SET state = 1''', (update.message.from_user.id, update.message.from_user.username, update.message.from_user.first_name, '[]'))
@@ -91,15 +90,15 @@ def error_callback(bot, update, error):
 def send_message_to_owner(bot, update):
     bot.send_message(chat_id=owner_id, text=update)
 
-def broacastMessage(text):
+def broadcastMessage(text):
     cur.execute('''SELECT * FROM user_data WHERE state = 1''')
     row = cur.fetchall()
     for x in row:
         chat_id = json.loads(x[0])
         try: #Try to send a message to the user. If the user has blocked the bot, just skip
             bot.send_message(chat_id=chat_id, text=text, parse_mode="HTML")
-        except:
-            pass
+        except Exception as e:
+            logging.info("Error: ")
     logging.info("Broadcast complete")
 
 def check_valid_bus_stop(message):
@@ -303,14 +302,17 @@ def serviceUpdate(bot, update):
     if (pjson["value"]["Message"] != []):
         if pjson["value"]["Message"][0]["Content"] != serviceUpdate:
             serviceUpdate = pjson["value"]["Message"][0]["Content"]
-            logging.info("Service update: " + text)
-            broacastMessage(text)
+            logging.info("Service update: " + serviceUpdate)
+            broacastMessage(serviceUpdate)
 
 class FilterBusService(BaseFilter): #Create a new telegram filter, filter out bus Services
     def filter(self, message):
         with open("busServiceNo.txt", "rb") as afile:
             busServiceNo = pickle.load(afile)
-        return message.text.upper() in busServiceNo
+        try:
+            return message.text.upper() in busServiceNo
+        else:
+            return False
 
 busService_filter = FilterBusService()
 
@@ -540,6 +542,7 @@ def main():
     telegram_logger = logging.getLogger('telegram.ext.updater')
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
     telegram_logger.addFilter(TimedOutFilter())
+    serviceUpdate = ""
 
     command_handler = MessageHandler(Filters.command, commands)
     refresh_handler = CallbackQueryHandler(refresh_timings)
